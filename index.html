@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>SMM Store — продвижение в Telegram</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;
+    --secondary-bg:#f2f2f7;
+    --text:#0f0f10;
+    --hint:#8b8b93;
+    --link:#2AABEE;
+    --button:#2AABEE;
+    --button-text:#ffffff;
+    --border:rgba(0,0,0,.08);
+    --star-1:#FFC93C;
+    --star-2:#FF8A00;
+    --danger:#E53935;
+    --good:#34C759;
+    --amber:#FF9F0A;
+    --radius:13px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e0e10;
+      --secondary-bg:#1c1c1e;
+      --text:#f5f5f7;
+      --hint:#8b8b93;
+      --border:rgba(255,255,255,.09);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--secondary-bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .app{max-width:480px;margin:0 auto;padding:12px 16px calc(96px + var(--safe-bottom));}
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* header */
+  header{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 4px 14px;gap:10px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-star{font-size:22px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
+  h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.01em;}
+  .subtitle{font-size:13px;color:var(--hint);margin:4px 0 0 32px;}
+  .header-text{flex:1;min-width:0;}
+
+  .avatar-btn{
+    flex:none;width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    font-size:14px;font-weight:700;color:#fff;margin-top:2px;
+  }
+  .avatar-btn img{width:100%;height:100%;object-fit:cover;}
+
+  .back-row{display:flex;align-items:center;gap:8px;padding:16px 4px 6px;cursor:pointer;}
+  .back-row span{font-size:15px;font-weight:600;color:var(--link);}
+
+  .demo-note{
+    display:none;
+    margin:0 0 14px;padding:10px 12px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    font-size:12.5px;color:var(--hint);line-height:1.4;
+  }
+  .demo-note b{color:var(--text);}
+  .demo-note.show{display:block;}
+  .demo-note button{
+    background:none;border:none;color:var(--link);font-size:12.5px;font-weight:600;
+    padding:0;margin-top:4px;cursor:pointer;
+  }
+
+  /* tabs */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:none;padding:8px 14px;border-radius:999px;
+    background:var(--bg);border:1px solid var(--border);
+    font-size:14.5px;font-weight:600;color:var(--hint);
+    cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s;
+  }
+  .tab.active{background:var(--link);border-color:var(--link);color:#fff;}
+
+  /* list group */
+  .group{
+    background:var(--bg);
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    overflow:hidden;
+    margin-bottom:16px;
+  }
+  .row{
+    padding:13px 14px;
+    cursor:pointer;
+    border-bottom:1px solid var(--border);
+  }
+  .group .row:last-of-type{border-bottom:none;}
+  .row-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .row-name{font-size:15.5px;font-weight:600;}
+  .row-desc{font-size:12.5px;color:var(--hint);margin-top:2px;line-height:1.35;}
+  .row-price{font-size:13.5px;color:var(--hint);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .row-price b{color:var(--text);font-weight:700;}
+  .chev{color:var(--hint);font-size:13px;transition:transform .18s;flex:none;}
+  .row.open .chev{transform:rotate(90deg);}
+
+  .row-form{max-height:0;overflow:hidden;transition:max-height .22s ease;}
+  .row.open .row-form{max-height:360px;}
+  .row-form-inner{padding:4px 0 6px;}
+
+  .field-label{font-size:12px;color:var(--hint);margin:10px 0 6px;font-weight:600;}
+  .qty-control{display:flex;align-items:center;gap:10px;}
+  .qty-btn{
+    width:34px;height:34px;border-radius:9px;border:1px solid var(--border);
+    background:var(--secondary-bg);color:var(--text);font-size:18px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;
+  }
+  .qty-btn:active{opacity:.6;}
+  .qty-input{
+    flex:1;min-width:0;text-align:center;font-size:16px;font-weight:700;
+    border:1px solid var(--border);border-radius:9px;background:var(--secondary-bg);
+    color:var(--text);padding:8px 4px;font-variant-numeric:tabular-nums;
+  }
+  .chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .chip{
+    padding:5px 10px;border-radius:999px;background:var(--secondary-bg);
+    border:1px solid var(--border);font-size:12.5px;color:var(--text);cursor:pointer;
+  }
+  .chip.active{background:var(--link);border-color:var(--link);color:#fff;}
+  .link-input{
+    width:100%;border:1px solid var(--border);border-radius:9px;
+    background:var(--secondary-bg);color:var(--text);padding:9px 10px;font-size:14.5px;
+  }
+  .link-input::placeholder{color:var(--hint);}
+  .link-hint{font-size:11.5px;color:var(--hint);margin-top:5px;}
+  .link-required{border-color:var(--danger) !important;}
+
+  .form-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:10px;}
+  .form-total{font-size:14.5px;font-weight:600;}
+  .add-btn{
+    background:var(--link);color:#fff;border:none;border-radius:9px;
+    padding:9px 16px;font-size:14.5px;font-weight:700;cursor:pointer;
+  }
+  .add-btn:active{opacity:.75;}
+  .add-btn.added{background:var(--good);}
+
+  .star{background:linear-gradient(135deg,var(--star-1),var(--star-2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800;}
+
+  /* ---- profile screen ---- */
+  .section-title{font-size:15.5px;font-weight:700;margin:0 4px 8px;}
+
+  .profile-card{display:flex;align-items:center;gap:12px;padding:16px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;}
+  .profile-avatar{width:56px;height:56px;border-radius:50%;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;}
+  .profile-avatar img{width:100%;height:100%;object-fit:cover;}
+  .profile-name{font-size:16.5px;font-weight:700;}
+  .profile-username{font-size:13px;color:var(--hint);margin-top:2px;}
+
+  .balance-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;margin-bottom:18px;}
+  .balance-row{display:flex;align-items:center;justify-content:space-between;}
+  .balance-label{font-size:12.5px;color:var(--hint);}
+  .balance-amount{font-size:26px;font-weight:800;margin-top:4px;}
+  .balance-hint{font-size:12px;color:var(--hint);margin-top:6px;line-height:1.4;max-width:230px;}
+
+  .switch{position:relative;width:46px;height:27px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch-track{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:background .15s;cursor:pointer;}
+  .switch-thumb{position:absolute;top:2px;left:2px;width:23px;height:23px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s;}
+  .switch input:checked + .switch-track{background:var(--good);}
+  .switch input:checked + .switch-track .switch-thumb{transform:translateX(19px);}
+
+  .promo-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;margin-bottom:18px;}
+  .promo-row{display:flex;gap:8px;}
+  .promo-row .link-input{flex:1;text-transform:uppercase;}
+  .promo-apply{background:var(--text);color:var(--bg);border:none;border-radius:9px;padding:0 16px;font-size:14px;font-weight:700;cursor:pointer;}
+  .promo-msg{font-size:12.5px;margin-top:8px;}
+  .promo-msg.err{color:var(--danger);}
+  .promo-applied{display:flex;align-items:center;justify-content:space-between;background:var(--secondary-bg);border-radius:9px;padding:9px 11px;margin-top:10px;}
+  .promo-applied b{font-size:13.5px;}
+  .promo-remove{background:none;border:none;color:var(--hint);font-size:15px;cursor:pointer;}
+
+  .order-row{padding:13px 14px;border-bottom:1px solid var(--border);}
+  .group .order-row:last-child{border-bottom:none;}
+  .order-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .order-date{font-size:12px;color:var(--hint);}
+  .order-items{font-size:14px;font-weight:600;margin-top:3px;}
+  .order-link{font-size:12px;color:var(--hint);margin-top:2px;}
+  .order-right{text-align:right;flex:none;}
+  .order-total{font-size:14.5px;font-weight:700;}
+  .status-pill{display:inline-block;margin-top:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;}
+  .status-paid{background:rgba(42,171,238,.14);color:var(--link);}
+  .status-processing{background:rgba(255,159,10,.15);color:var(--amber);}
+  .status-done{background:rgba(52,199,89,.15);color:var(--good);}
+  .empty-state{padding:26px 4px;text-align:center;color:var(--hint);font-size:13.5px;}
+
+  /* cart sheet */
+  .cart-sheet{
+    position:fixed;left:0;right:0;bottom:0;
+    background:var(--bg);
+    border-top-left-radius:16px;border-top-right-radius:16px;
+    box-shadow:0 -6px 24px rgba(0,0,0,.14);
+    max-width:480px;margin:0 auto;
+    transform:translateY(100%);transition:transform .25s ease;
+    max-height:78vh;display:flex;flex-direction:column;
+    z-index:20;
+  }
+  .cart-sheet.open{transform:translateY(0);}
+  .cart-handle{padding:10px 0 4px;display:flex;justify-content:center;cursor:pointer;}
+  .cart-handle span{width:36px;height:4px;border-radius:2px;background:var(--border);}
+  .cart-head{padding:4px 18px 10px;font-size:16px;font-weight:700;}
+  .cart-items{overflow-y:auto;padding:0 14px;}
+  .cart-item{display:flex;justify-content:space-between;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);}
+  .cart-item:last-child{border-bottom:none;}
+  .ci-name{font-size:14.5px;font-weight:600;}
+  .ci-meta{font-size:12px;color:var(--hint);margin-top:2px;}
+  .ci-right{display:flex;align-items:center;gap:10px;flex:none;}
+  .ci-price{font-size:14px;font-weight:700;white-space:nowrap;}
+  .ci-remove{width:26px;height:26px;border-radius:50%;border:none;background:var(--secondary-bg);color:var(--hint);font-size:15px;cursor:pointer;}
+  .cart-empty{padding:24px 4px;text-align:center;color:var(--hint);font-size:13.5px;}
+  .cart-summary{padding:10px 18px 4px;border-top:1px solid var(--border);}
+  .sum-line{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;color:var(--hint);}
+  .sum-line.total{color:var(--text);font-weight:700;font-size:15px;padding-top:6px;}
+
+  /* bottom bar (shown only outside real Telegram client — inside Telegram we use native MainButton) */
+  .bottom-bar{
+    position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;
+    background:var(--bg);border-top:1px solid var(--border);
+    padding:10px 14px calc(10px + var(--safe-bottom));
+    display:flex;align-items:center;gap:12px;z-index:15;
+  }
+  .bb-info{flex:1;min-width:0;cursor:pointer;}
+  .bb-count{font-size:12px;color:var(--hint);}
+  .bb-total{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .pay-btn{
+    background:linear-gradient(135deg,var(--link),#229ED9);color:#fff;border:none;border-radius:11px;
+    padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;
+  }
+  .pay-btn:disabled{opacity:.4;cursor:default;}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:19;}
+  .overlay.show{opacity:1;pointer-events:auto;}
+
+  .success{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:30;padding:20px;}
+  .success.show{display:flex;}
+  .success-card{background:var(--bg);border-radius:16px;padding:26px 22px;max-width:340px;width:100%;text-align:center;}
+  .success-icon{font-size:40px;margin-bottom:10px;}
+  .success-title{font-size:17px;font-weight:700;margin-bottom:6px;}
+  .success-text{font-size:13.5px;color:var(--hint);line-height:1.5;margin-bottom:18px;}
+  .success-close{background:var(--link);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-size:14.5px;font-weight:700;cursor:pointer;width:100%;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== Экран магазина ===== -->
+  <div class="screen active" id="shopScreen">
+    <header>
+      <div class="header-text">
+        <div class="brand">
+          <span class="brand-star">⭐</span>
+          <h1>SMM Store</h1>
+        </div>
+        <p class="subtitle">Подписчики, просмотры и реакции — оплата в Telegram Stars</p>
+      </div>
+      <button class="avatar-btn" id="avatarBtn"></button>
+    </header>
+
+    <div class="demo-note" id="demoNote">
+      Это демонстрационная версия витрины. Оплата, баланс, промокоды и история заказов здесь показывают, как будет работать процесс — для реальных операций нужно подключить бэкенд (см. <b>server.js</b> рядом с этим файлом).
+      <div><button onclick="document.getElementById('demoNote').classList.remove('show')">Понятно</button></div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="groups"></div>
+  </div>
+
+  <!-- ===== Экран профиля ===== -->
+  <div class="screen" id="profileScreen">
+    <div class="back-row" id="backRow"><span>‹ Магазин</span></div>
+
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div>
+        <div class="profile-name" id="profileName">Гость</div>
+        <div class="profile-username" id="profileUsername"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Баланс</div>
+    <div class="balance-card">
+      <div class="balance-row">
+        <div>
+          <div class="balance-label">Доступно</div>
+          <div class="balance-amount"><span class="star" id="balanceAmount">0</span> ⭐</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="useBalanceToggle">
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </label>
+      </div>
+      <div class="balance-hint">Баллы магазина — начисляются кешбэком после оплаты и списываются автоматически, если включить переключатель, при следующем заказе.</div>
+    </div>
+
+    <div class="section-title">Промокод</div>
+    <div class="promo-card">
+      <div class="promo-row">
+        <input class="link-input" type="text" id="promoInput" placeholder="Введите код">
+        <button class="promo-apply" id="promoApplyBtn">Применить</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+      <div class="promo-applied" id="promoApplied" style="display:none;">
+        <b id="promoAppliedText"></b>
+        <button class="promo-remove" id="promoRemoveBtn">×</button>
+      </div>
+    </div>
+
+    <div class="section-title">История заказов</div>
+    <div class="group" id="ordersGroup"></div>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="cart-sheet" id="cartSheet">
+  <div class="cart-handle" id="cartHandleClose"><span></span></div>
+  <div class="cart-head">Корзина</div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-summary" id="cartSummary"></div>
+</div>
+
+<div class="bottom-bar" id="bottomBar" style="display:none;">
+  <div class="bb-info" id="bbInfo">
+    <div class="bb-count" id="bbCount">Корзина пуста</div>
+    <div class="bb-total" id="bbTotal"></div>
+  </div>
+  <button class="pay-btn" id="payBtn" disabled>Оплатить</button>
+</div>
+
+<div class="success" id="successModal">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Заказ оформлен</div>
+    <div class="success-text" id="successText"></div>
+    <button class="success-close" onclick="closeSuccess()">Готово</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Каталог услуг ----------
+   price1000 — цена в Stars за 1000 единиц. Отредактируйте под свои закупочные цены.
+   target: 'post' — нужна ссылка на пост, 'channel' — ссылка/юзернейм канала. */
+const SERVICES = [
+  { id:'sub_real',      cat:'subs',      name:'Живые подписчики',      desc:'Реальные аккаунты без аватара, плавная скорость набора', price1000:45,  min:100, max:50000,  step:50,  target:'channel' },
+  { id:'sub_premium',   cat:'subs',      name:'Премиум подписчики',    desc:'Аккаунты с историей и аватаром, выше удержание',         price1000:120, min:50,  max:20000,  step:50,  target:'channel' },
+  { id:'views_instant', cat:'views',     name:'Просмотры (моментально)', desc:'Приходят в течение 5–10 минут после заказа',           price1000:8,   min:500, max:1000000, step:500, target:'post' },
+  { id:'views_smooth',  cat:'views',     name:'Просмотры (плавно, 24ч)', desc:'Распределяются в течение суток — выглядит органично',  price1000:6,   min:500, max:1000000, step:500, target:'post' },
+  { id:'react_random',  cat:'reactions', name:'Случайные реакции',     desc:'Микс из доступных эмодзи-реакций на пост',               price1000:15,  min:20,  max:5000,   step:10,  target:'post' },
+  { id:'react_premium', cat:'reactions', name:'Премиум реакции 🔥❤️',  desc:'Выбор конкретных эмодзи под ваш пост',                   price1000:25,  min:20,  max:5000,   step:10,  target:'post' },
+];
+const CATS = [
+  { id:'subs',      label:'Подписчики' },
+  { id:'views',     label:'Просмотры' },
+  { id:'reactions', label:'Реакции' },
+];
+
+/* Демо-промокоды для фронтенда без бэкенда. На проде проверка обязана идти
+   на сервере (см. /api/apply-promo в server.js) — иначе любой человек
+   откроет консоль браузера и применит себе скидку. */
+const PROMO_CODES = {
+  'SMM10':    { type:'percent', value:10,  label:'Промокод SMM10 — скидка 10%' },
+  'START500': { type:'fixed',   value:500, label:'Промокод START500 — скидка 500 ⭐' },
+};
+
+let activeCat = 'subs';
+let cart = []; // {cartId, serviceId, name, qty, link, price}
+let openRowId = null;
+const draft = {}; // serviceId -> {qty, link}
+
+let balance = 0;
+let useBalance = false;
+let appliedPromo = null; // {code, type, value, label}
+let orders = []; // история заказов
+
+const fmt = n => Math.round(n).toLocaleString('ru-RU');
+const priceFor = (svc, qty) => Math.max(1, Math.round(qty/1000*svc.price1000));
+
+function chipsFor(svc){
+  const raw = [svc.min, svc.min*5, svc.min*20, svc.max];
+  const seen = new Set(); const out = [];
+  raw.forEach(v=>{ v = Math.min(v, svc.max); if(!seen.has(v)){ seen.add(v); out.push(v); } });
+  return out;
+}
+
+/* ---------- Витрина ---------- */
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  CATS.forEach(c=>{
+    const b = document.createElement('div');
+    b.className = 'tab' + (c.id===activeCat ? ' active' : '');
+    b.textContent = c.label;
+    b.onclick = ()=>{ activeCat = c.id; openRowId = null; renderTabs(); renderGroups(); };
+    el.appendChild(b);
+  });
+}
+
+function renderGroups(){
+  const el = document.getElementById('groups');
+  el.innerHTML = '';
+  const group = document.createElement('div');
+  group.className = 'group';
+  SERVICES.filter(s=>s.cat===activeCat).forEach(svc=>{
+    if(!draft[svc.id]) draft[svc.id] = { qty: svc.min, link: '' };
+    const row = document.createElement('div');
+    row.className = 'row' + (openRowId===svc.id ? ' open' : '');
+    const linkLabel = svc.target==='post' ? 'Ссылка на пост' : 'Ссылка на канал (или @username)';
+    const linkPlaceholder = svc.target==='post' ? 'https://t.me/channel/123' : '@my_channel';
+    row.innerHTML = `
+      <div class="row-top" data-toggle>
+        <div>
+          <div class="row-name">${svc.name}</div>
+          <div class="row-desc">${svc.desc}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="row-price">от <b class="star">${svc.price1000}</b> ⭐/1000</div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+      <div class="row-form">
+        <div class="row-form-inner">
+          <div class="field-label">Количество (${svc.min}–${fmt(svc.max)})</div>
+          <div class="qty-control">
+            <div class="qty-btn" data-dec>−</div>
+            <input class="qty-input" type="number" inputmode="numeric" value="${draft[svc.id].qty}" data-qty>
+            <div class="qty-btn" data-inc>+</div>
+          </div>
+          <div class="chips" data-chips></div>
+          <div class="field-label">${linkLabel} *</div>
+          <input class="link-input" type="text" placeholder="${linkPlaceholder}" value="${draft[svc.id].link}" data-link>
+          <div class="link-hint">Обязательное поле — без ссылки заказ не будет добавлен в корзину</div>
+          <div class="form-footer">
+            <div class="form-total">Итого: <span class="star" data-total></span> ⭐</div>
+            <button class="add-btn" data-add>Добавить</button>
+          </div>
+        </div>
+      </div>
+    `;
+    group.appendChild(row);
+
+    const qtyInput = row.querySelector('[data-qty]');
+    const totalEl = row.querySelector('[data-total]');
+    const chipsEl = row.querySelector('[data-chips]');
+    const linkInput = row.querySelector('[data-link]');
+
+    function clamp(v){ v = Math.round(v/svc.step)*svc.step; return Math.min(svc.max, Math.max(svc.min, v||svc.min)); }
+    function refresh(){
+      const q = clamp(parseInt(qtyInput.value)||svc.min);
+      qtyInput.value = q;
+      draft[svc.id].qty = q;
+      totalEl.textContent = fmt(priceFor(svc, q));
+      chipsEl.querySelectorAll('.chip').forEach(c=>{
+        c.classList.toggle('active', parseInt(c.dataset.v)===q);
+      });
+    }
+    chipsFor(svc).forEach(v=>{
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.dataset.v = v; chip.textContent = fmt(v);
+      chip.onclick = (e)=>{ e.stopPropagation(); qtyInput.value=v; refresh(); };
+      chipsEl.appendChild(chip);
+    });
+    refresh();
+
+    row.querySelector('[data-toggle]').onclick = ()=>{
+      openRowId = (openRowId===svc.id) ? null : svc.id;
+      renderGroups();
+    };
+    row.querySelector('[data-dec]').onclick = (e)=>{ e.stopPropagation(); qtyInput.value = clamp(draft[svc.id].qty - svc.step); refresh(); };
+    row.querySelector('[data-inc]').onclick = (e)=>{ e.stopPropagation(); qtyInput.value = clamp(draft[svc.id].qty + svc.step); refresh(); };
+    qtyInput.onclick = e=>e.stopPropagation();
+    qtyInput.onchange = refresh;
+    linkInput.onclick = e=>e.stopPropagation();
+    linkInput.oninput = ()=>{ draft[svc.id].link = linkInput.value; linkInput.classList.remove('link-required'); };
+
+    row.querySelector('[data-add]').onclick = (e)=>{
+      e.stopPropagation();
+      const q = draft[svc.id].qty;
+      const link = linkInput.value.trim();
+      if(!link){ linkInput.focus(); linkInput.classList.add('link-required'); return; }
+      cart.push({ cartId: Date.now()+Math.random(), serviceId: svc.id, name: svc.name, qty: q, link, price: priceFor(svc,q) });
+      const btn = e.currentTarget;
+      btn.textContent = 'Добавлено ✓'; btn.classList.add('added');
+      setTimeout(()=>{ btn.textContent='Добавить'; btn.classList.remove('added'); }, 900);
+      renderCart();
+    };
+  });
+  el.appendChild(group);
+}
+
+/* ---------- Расчёт итогов (промокод + баланс) ---------- */
+function computeTotals(){
+  const subtotal = cart.reduce((s,i)=>s+i.price,0);
+  let promoDiscount = 0;
+  if(appliedPromo){
+    promoDiscount = appliedPromo.type==='percent'
+      ? Math.round(subtotal*appliedPromo.value/100)
+      : appliedPromo.value;
+    promoDiscount = Math.min(promoDiscount, subtotal);
+  }
+  const afterPromo = subtotal - promoDiscount;
+  const balanceUsed = useBalance ? Math.min(balance, afterPromo) : 0;
+  const final = Math.max(0, afterPromo - balanceUsed);
+  return { subtotal, promoDiscount, afterPromo, balanceUsed, final };
+}
+
+function renderCart(){
+  const itemsEl = document.getElementById('cartItems');
+  const summaryEl = document.getElementById('cartSummary');
+  const bbCount = document.getElementById('bbCount');
+  const bbTotal = document.getElementById('bbTotal');
+  const bottomBar = document.getElementById('bottomBar');
+  const payBtn = document.getElementById('payBtn');
+
+  if(cart.length===0){
+    itemsEl.innerHTML = '<div class="cart-empty">Пока пусто — выберите услугу выше</div>';
+  } else {
+    itemsEl.innerHTML = cart.map(item=>`
+      <div class="cart-item">
+        <div>
+          <div class="ci-name">${item.name}</div>
+          <div class="ci-meta">${fmt(item.qty)} шт · ${item.link}</div>
+        </div>
+        <div class="ci-right">
+          <div class="ci-price">${fmt(item.price)} ⭐</div>
+          <button class="ci-remove" data-remove="${item.cartId}">×</button>
+        </div>
+      </div>
+    `).join('');
+    itemsEl.querySelectorAll('[data-remove]').forEach(btn=>{
+      btn.onclick = ()=>{ cart = cart.filter(i=>String(i.cartId)!==btn.dataset.remove); renderCart(); };
+    });
+  }
+
+  const t = computeTotals();
+  let summaryHtml = '';
+  if(cart.length){
+    if(appliedPromo) summaryHtml += `<div class="sum-line"><span>Промокод ${appliedPromo.code}</span><span>−${fmt(t.promoDiscount)} ⭐</span></div>`;
+    if(t.balanceUsed>0) summaryHtml += `<div class="sum-line"><span>Списание баланса</span><span>−${fmt(t.balanceUsed)} ⭐</span></div>`;
+    summaryHtml += `<div class="sum-line total"><span>Итого</span><span>${fmt(t.final)} ⭐</span></div>`;
+  }
+  summaryEl.innerHTML = summaryHtml;
+
+  bbCount.textContent = cart.length ? `Корзина · ${cart.length} ${plural(cart.length)}` : 'Корзина пуста';
+  bbTotal.innerHTML = t.final || (cart.length && t.final===0) ? `<span class="star">${fmt(t.final)}</span> ⭐` : '';
+  payBtn.disabled = cart.length===0;
+
+  if(inTelegram && tg){
+    if(cart.length){
+      tg.MainButton.setText(t.final>0 ? `Оплатить ${fmt(t.final)} ⭐` : `Оформить заказ`);
+      tg.MainButton.show(); tg.MainButton.enable();
+    } else {
+      tg.MainButton.hide();
+    }
+    bottomBar.style.display = 'none';
+  } else {
+    bottomBar.style.display = 'flex';
+    payBtn.textContent = t.final>0 ? `Оплатить ${fmt(t.final)} ⭐` : 'Оформить';
+  }
+}
+
+function plural(n){
+  const f = n%10, s = n%100;
+  if(f===1 && s!==11) return 'товар';
+  if(f>=2 && f<=4 && (s<10||s>=20)) return 'товара';
+  return 'товаров';
+}
+
+/* cart sheet open/close */
+const cartSheet = document.getElementById('cartSheet');
+const overlay = document.getElementById('overlay');
+function openCart(){ cartSheet.classList.add('open'); overlay.classList.add('show'); }
+function closeCart(){ cartSheet.classList.remove('open'); overlay.classList.remove('show'); }
+document.getElementById('bbInfo').onclick = openCart;
+document.getElementById('cartHandleClose').onclick = closeCart;
+overlay.onclick = closeCart;
+
+/* ---------- Профиль ---------- */
+function initialsAndColor(name, seedId){
+  const initials = (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
+  const palette = ['#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#4DABF7','#748FFC','#DA77F2','#FF8787'];
+  const seed = String(seedId||name||'x').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  return { initials, color: palette[seed % palette.length] };
+}
+
+function currentUser(){
+  const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+  if(u) return u;
+  return { id:'guest', first_name:'Гость', username:null, photo_url:null };
+}
+
+function renderProfileHeader(){
+  const u = currentUser();
+  const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Гость';
+  const { initials, color } = initialsAndColor(name, u.id);
+
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('profileUsername').textContent = u.username ? '@'+u.username : '';
+
+  const bigAvatar = document.getElementById('profileAvatar');
+  const smallAvatar = document.getElementById('avatarBtn');
+  [bigAvatar, smallAvatar].forEach(el=>{
+    el.style.background = color;
+    el.innerHTML = u.photo_url ? `<img src="${u.photo_url}" alt="">` : initials;
+  });
+}
+
+function renderBalance(){
+  document.getElementById('balanceAmount').textContent = fmt(balance);
+  document.getElementById('useBalanceToggle').checked = useBalance;
+}
+
+function renderOrders(){
+  const el = document.getElementById('ordersGroup');
+  if(orders.length===0){
+    el.innerHTML = '<div class="empty-state">Заказов пока нет — оформите первый в магазине</div>';
+    return;
+  }
+  const statusClass = { 'Оплачен':'status-paid', 'В обработке':'status-processing', 'Выполнен':'status-done' };
+  el.innerHTML = orders.map(o=>`
+    <div class="order-row">
+      <div class="order-top">
+        <div>
+          <div class="order-date">${o.date}</div>
+          <div class="order-items">${o.items.map(i=>`${i.name} × ${fmt(i.qty)}`).join(', ')}</div>
+          <div class="order-link">${o.link}</div>
+        </div>
+        <div class="order-right">
+          <div class="order-total">${fmt(o.total)} ⭐</div>
+          <span class="status-pill ${statusClass[o.status]||'status-paid'}">${o.status}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Демо-данные профиля — используются, если бэкенд (GET /api/profile) недоступен */
+function loadDemoProfile(){
+  balance = 120;
+  orders = [
+    { date:'28 авг', items:[{name:'Живые подписчики',qty:1000}], link:'@my_channel', total:45, status:'Выполнен' },
+    { date:'15 авг', items:[{name:'Просмотры (моментально)',qty:3000}], link:'t.me/my_channel/482', total:24, status:'Выполнен' },
+  ];
+}
+
+async function loadProfile(){
+  try{
+    const resp = await fetch('/api/profile?initData=' + encodeURIComponent(tg ? tg.initData : ''));
+    if(!resp.ok) throw new Error('no backend');
+    const data = await resp.json();
+    balance = data.balance || 0;
+    orders = data.orders || [];
+  }catch(err){
+    loadDemoProfile();
+  }
+  renderBalance();
+  renderOrders();
+}
+
+document.getElementById('useBalanceToggle').onchange = (e)=>{
+  useBalance = e.target.checked;
+  renderCart();
+};
+
+/* Промокод */
+async function applyPromo(){
+  const input = document.getElementById('promoInput');
+  const msg = document.getElementById('promoMsg');
+  const code = input.value.trim().toUpperCase();
+  msg.textContent = ''; msg.className = 'promo-msg';
+  if(!code) return;
+
+  let result = null;
+  try{
+    const resp = await fetch('/api/apply-promo', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code, initData: tg ? tg.initData : null })
+    });
+    if(resp.ok) result = await resp.json();
+  }catch(err){ /* нет бэкенда — проверим локальный демо-список */ }
+
+  if(!result){
+    const demo = PROMO_CODES[code];
+    result = demo ? { valid:true, ...demo } : { valid:false, message:'Такого промокода нет' };
+  }
+
+  if(result.valid){
+    appliedPromo = { code, type:result.type, value:result.value, label:result.label };
+    document.getElementById('promoApplied').style.display = 'flex';
+    document.getElementById('promoAppliedText').textContent = result.label;
+    input.value = '';
+  } else {
+    msg.textContent = result.message || 'Промокод не подходит';
+    msg.classList.add('err');
+  }
+  renderCart();
+}
+document.getElementById('promoApplyBtn').onclick = applyPromo;
+document.getElementById('promoRemoveBtn').onclick = ()=>{
+  appliedPromo = null;
+  document.getElementById('promoApplied').style.display = 'none';
+  renderCart();
+};
+
+/* ---------- Навигация между экранами ---------- */
+function showScreen(name){
+  document.getElementById('shopScreen').classList.toggle('active', name==='shop');
+  document.getElementById('profileScreen').classList.toggle('active', name==='profile');
+  if(tg){
+    if(name==='profile'){ tg.BackButton.show(); } else { tg.BackButton.hide(); }
+  }
+  document.getElementById('bottomBar').style.display = (name==='shop' && !inTelegram && cart.length) ? 'flex' : (name==='shop' ? document.getElementById('bottomBar').style.display : 'none');
+  if(name==='profile') loadProfile();
+  if(name==='shop') renderCart();
+}
+document.getElementById('avatarBtn').onclick = ()=>showScreen('profile');
+document.getElementById('backRow').onclick = ()=>showScreen('shop');
+
+/* ---------- Telegram WebApp integration ---------- */
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTelegram = !!(tg && tg.initData);
+
+if(tg){
+  tg.ready();
+  tg.expand();
+  applyTheme();
+  tg.onEvent('themeChanged', applyTheme);
+  tg.BackButton.onClick(()=>showScreen('shop'));
+}
+function applyTheme(){
+  const p = tg.themeParams || {};
+  const root = document.documentElement.style;
+  if(p.bg_color) root.setProperty('--bg', p.bg_color);
+  if(p.secondary_bg_color) root.setProperty('--secondary-bg', p.secondary_bg_color);
+  if(p.text_color) root.setProperty('--text', p.text_color);
+  if(p.hint_color) root.setProperty('--hint', p.hint_color);
+  if(p.link_color) root.setProperty('--link', p.link_color);
+  if(p.button_color) root.setProperty('--button', p.button_color);
+  if(p.button_text_color) root.setProperty('--button-text', p.button_text_color);
+}
+
+if(!inTelegram){
+  document.getElementById('demoNote').classList.add('show');
+}
+
+/* ---------- Checkout ----------
+   В проде это обращается к ВАШЕМУ бэкенду (см. server.js), который создаёт
+   настоящий инвойс Telegram Stars через Bot API (createInvoiceLink,
+   currency "XTR") и пересчитывает скидки/баланс на сервере — никогда не
+   доверяйте сумме, посчитанной в браузере. Mini App затем открывает
+   инвойс через Telegram.WebApp.openInvoice(). Ваш бэкенд — это то место,
+   где заказ реально появляется у вас после оплаты. */
+async function payWithStars(){
+  const t = computeTotals();
+  if(cart.length===0) return;
+
+  // Если промокод/баланс полностью покрыли сумму — Stars не нужны вообще,
+  // такой заказ оплачивается только баллами (в проде — тоже через бэкенд).
+  if(t.final<=0){
+    finishOrder(t, { paidWithBalanceOnly:true });
+    return;
+  }
+
+  let invoiceLink = null;
+  try{
+    const resp = await fetch('/api/create-invoice', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        items: cart,
+        promoCode: appliedPromo ? appliedPromo.code : null,
+        useBalance,
+        initData: tg ? tg.initData : null
+      })
+    });
+    if(resp.ok){
+      const data = await resp.json();
+      invoiceLink = data.invoiceLink;
+    }
+  }catch(err){ /* нет бэкенда — сработает демо-режим ниже */ }
+
+  if(invoiceLink && tg){
+    tg.MainButton.showProgress();
+    tg.openInvoice(invoiceLink, (status)=>{
+      tg.MainButton.hideProgress();
+      if(status==='paid') finishOrder(t, { paidWithBalanceOnly:false });
+    });
+    return;
+  }
+
+  // Демо-режим (бэкенд не подключён)
+  finishOrder(t, { paidWithBalanceOnly:false, demo:true });
+}
+
+function finishOrder(t, opts){
+  const paidLink = cart.map(i=>i.link).join(', ');
+  orders.unshift({
+    date:'сегодня',
+    items: cart.map(i=>({ name:i.name, qty:i.qty })),
+    link: paidLink,
+    total: t.final,
+    status:'Оплачен',
+  });
+  balance = Math.max(0, balance - t.balanceUsed) + Math.round(t.final*0.05); // 5% кешбэк
+  cart = [];
+  appliedPromo = null;
+  document.getElementById('promoApplied').style.display = 'none';
+  renderCart(); renderBalance(); renderOrders();
+  closeCart();
+
+  const text = opts.paidWithBalanceOnly
+    ? 'Заказ полностью оплачен баллами баланса — списание Stars не потребовалось.'
+    : opts.demo
+      ? `Демо-режим: реальное списание ${fmt(t.final)} ⭐ произойдёт после подключения бота-бэкенда. Сценарий оформления уже работает, заказ добавлен в историю профиля.`
+      : `Заказ оплачен на ${fmt(t.final)} ⭐. Он передан в обработку — обновления придут в этот чат.`;
+  showSuccess(text);
+}
+
+function showSuccess(text){
+  document.getElementById('successText').textContent = text;
+  document.getElementById('successModal').classList.add('show');
+}
+function closeSuccess(){ document.getElementById('successModal').classList.remove('show'); }
+
+document.getElementById('payBtn').onclick = payWithStars;
+if(tg){ tg.MainButton.onClick(payWithStars); }
+
+renderTabs();
+renderGroups();
+renderProfileHeader();
+renderCart();
+</script>
+</body>
+</html>
