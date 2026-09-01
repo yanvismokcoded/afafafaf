@@ -8,8 +8,8 @@
  *   node server.js
  *
  * .env:
- *   BOT_TOKEN=токен_от_BotFather
- *   OWNER_CHAT_ID=ваш_telegram_id_или_id_чата_для_заказов
+ *   BOT_TOKEN=8924068346:AAESrQU4ZIPTve5JJ-Xe2p4Lw8Qjf5505Cc
+ *   OWNER_CHAT_ID=@irlmetalbat
  *   PORT=3000
  *
  * OWNER_CHAT_ID: напишите боту любое сообщение, затем откройте
