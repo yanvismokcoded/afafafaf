@@ -1,0 +1,6 @@
+BOT_TOKEN=токен_от_BotFather
+OWNER_CHAT_ID=ваш_telegram_chat_id
+# Публичный https-адрес, где хостится index.html (Render/Railway/VPS+домен/ngrok).
+# Telegram открывает Mini App только по https — localhost не подойдёт.
+WEBAPP_URL=https://ваш-домен.example.com
+PORT=3000
