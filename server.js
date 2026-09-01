@@ -26,11 +26,20 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const OWNER_CHAT_ID = process.env.OWNER_CHAT_ID;
+const WEBAPP_URL = process.env.WEBAPP_URL; // публичный https-адрес, где хостится index.html
 const PORT = process.env.PORT || 3000;
 
 if (!BOT_TOKEN || !OWNER_CHAT_ID) {
   console.error('Заполните BOT_TOKEN и OWNER_CHAT_ID в .env');
   process.exit(1);
+}
+if (!WEBAPP_URL) {
+  console.warn(
+    'WEBAPP_URL не задан в .env — кнопка открытия Mini App работать не будет.\n' +
+    'Укажите публичный https-адрес (например, из Render/Railway/ngrok), где доступен index.html.'
+  );
+} else if (!/^https:\/\//i.test(WEBAPP_URL)) {
+  console.warn('WEBAPP_URL должен начинаться с https:// — Telegram не откроет Mini App по http-ссылке.');
 }
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -177,6 +186,33 @@ async function notifyOwner(tgUser, items, total, method) {
     `Покупатель: ${tgUser.first_name || ''} ${tgUser.username ? '@' + tgUser.username : '(id ' + tgUser.id + ')'}\n\n` +
     `${itemsText}`;
   await bot.sendMessage(OWNER_CHAT_ID, text);
+}
+
+/* ---------- Открытие Mini App через инлайн-кнопку ---------- */
+bot.onText(/\/start/, async (msg) => {
+  if (!WEBAPP_URL) {
+    return bot.sendMessage(msg.chat.id, 'Магазин временно недоступен: администратор ещё не подключил WEBAPP_URL.');
+  }
+  await bot.sendMessage(
+    msg.chat.id,
+    '☀️ SMM Store — подписчики, просмотры и реакции с оплатой в Telegram Stars.\n\nНажмите кнопку ниже, чтобы открыть магазин:',
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🛍 Открыть магазин', web_app: { url: WEBAPP_URL } },
+        ]],
+      },
+    }
+  );
+});
+
+// Постоянная кнопка меню слева от поля ввода (открывает Mini App в один тап).
+// Требует node-telegram-bot-api версии, знающей setChatMenuButton — если метод
+// недоступен, просто пропускаем, инлайн-кнопка из /start продолжит работать.
+if (WEBAPP_URL && typeof bot.setChatMenuButton === 'function') {
+  bot.setChatMenuButton({
+    menu_button: { type: 'web_app', text: 'Магазин', web_app: { url: WEBAPP_URL } },
+  }).catch((err) => console.warn('Не удалось установить кнопку меню:', err.message));
 }
 
 // Обязательно ответить в течение 10 секунд
