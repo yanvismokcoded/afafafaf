@@ -1,0 +1,4 @@
+BOT_TOKEN=токен_от_BotFather
+OWNER_CHAT_ID=числовой_chat_id
+WEBAPP_URL=https://ваш-домен.up.railway.app
+PORT=3000
