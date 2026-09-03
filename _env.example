@@ -1,0 +1,18 @@
+BOT_TOKEN=токен
+OWNER_CHAT_ID=7857672682
+WEBAPP_URL=https://afafafaf-production.up.railway.app/
+PORT=3000
+TWIBOOST_API_KEY=CnKHTkjxIgNntS22aIH5Qs4IWVlONnjLpgels0lYiC5efQYX5DenZO2HFcaZ
+# Один и тот же ключ используется и для автовыдачи (server.js), и для
+# скрипта fetch-twiboost-services.js, которым генерируются новые разделы
+# (например TikTok) — см. инструкцию в начале того скрипта.
+
+# Необязательно: путь к файлу, где хранятся балансы/история заказов
+# (по умолчанию data.json рядом с server.js). Если хостинг сбрасывает диск
+# при каждом деплое/перезапуске — укажите путь на постоянный volume.
+DATA_FILE=data.json
+
+# Необязательно: путь к файлу, где хранятся балансы/история заказов
+# (по умолчанию data.json рядом с server.js). Если хостинг сбрасывает диск
+# при каждом деплое/перезапуске — укажите путь на постоянный volume.
+DATA_FILE=data.json

@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Waveflair Store — продвижение в Telegram</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- фирменная палитра: насыщенная тёмная бирюза ---- */
+    --bg:rgba(17,61,64,.74);
+    --bg-solid:#123236;
+    --secondary-bg:#051417;
+    --text:#eafcf8;
+    --hint:#8fc4bf;
+    --link:#2AABEE;
+    --button:#2AABEE;
+    --button-text:#ffffff;
+    --border:rgba(94,224,204,.16);
+    --outline:#1f6b6a;
+    --outline-strong:#4be3cf;
+    --sun-1:#FFD976;
+    --sun-2:#FFB238;
+    --star-1:#FFD976;
+    --star-2:#FFB238;
+    --danger:#ff6e5c;
+    --good:#32d9a6;
+    --amber:#ffb648;
+    --radius:13px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    /* ---- добавлено для редизайна: форма, шрифты, текстура ---- */
+    --font-display:'Space Grotesk',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --font-body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --radius-sm:10px;
+    --radius-lg:22px;
+    --radius-pill:999px;
+    --glow: color-mix(in srgb, var(--outline-strong) 30%, transparent);
+    --glow-soft: color-mix(in srgb, var(--outline-strong) 16%, transparent);
+    --card-shadow: 0 1px 2px rgba(0,0,0,.35), 0 16px 34px -16px rgba(0,0,0,.6);
+    --card-blur: 22px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    position:relative;
+    background:
+      radial-gradient(1200px 640px at 50% -12%, #0c393c 0%, transparent 60%),
+      linear-gradient(180deg, #062024 0%, #041418 55%, #030f12 100%);
+    background-attachment:fixed;
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  /* фоновый узор из мелких «звёзд» (в духе Telegram Stars) + мягкие градиентные
+     пятна — держим плотность низкой, чтобы узор читался как текстура, а не шум */
+  body::before{
+    content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%235fe0cc' stroke-width='1' stroke-opacity='.5'%3E%3Cpath d='M14 4l1.6 4.4L20 10l-4.4 1.6L14 16l-1.6-4.4L8 10l4.4-1.6z'/%3E%3Ccircle cx='52' cy='30' r='1.4' fill='%23ffd976' stroke='none'/%3E%3Cpath d='M58 54l1.3 3.7 3.7 1.3-3.7 1.3-1.3 3.7-1.3-3.7-3.7-1.3 3.7-1.3z'/%3E%3Ccircle cx='24' cy='58' r='1.1' fill='%235fe0cc' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+    background-size:72px 72px;
+    opacity:.55;
+    -webkit-mask-image:radial-gradient(680px 520px at 50% 0%, #000 0%, transparent 82%);
+            mask-image:radial-gradient(680px 520px at 50% 0%, #000 0%, transparent 82%);
+  }
+  body::after{
+    content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(480px 300px at 92% -6%, color-mix(in srgb, var(--sun-2) 30%, transparent), transparent 68%),
+      radial-gradient(560px 380px at -10% 4%, color-mix(in srgb, var(--outline-strong) 30%, transparent), transparent 64%),
+      radial-gradient(620px 460px at 50% 118%, color-mix(in srgb, var(--outline-strong) 16%, transparent), transparent 70%);
+  }
+  .app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:14px 16px calc(158px + var(--safe-bottom));}
+  .screen{display:none;}
+  .screen.active{display:block;animation:rise .38s cubic-bezier(.2,.7,.2,1);}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* header */
+  header{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 2px 18px;gap:10px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-star{
+    flex:none;width:40px;height:40px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;line-height:1;
+    background:linear-gradient(155deg,var(--sun-1),var(--sun-2));
+    box-shadow:var(--card-shadow), inset 0 1px 0 rgba(255,255,255,.5), 0 0 22px -4px color-mix(in srgb, var(--sun-2) 70%, transparent);
+  }
+  h1{font-family:var(--font-display);font-size:22px;font-weight:700;margin:0;letter-spacing:-.02em;
+    background:linear-gradient(120deg,var(--text) 35%,var(--outline-strong));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .subtitle{font-size:13px;color:var(--hint);margin:5px 0 0 52px;line-height:1.4;max-width:280px;}
+  .header-text{flex:1;min-width:0;}
+
+  .avatar-btn{
+    flex:none;width:40px;height:40px;border-radius:var(--radius-sm);border:1.5px solid var(--outline-strong);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    font-size:14px;font-weight:700;color:#fff;margin-top:2px;
+    box-shadow:var(--card-shadow);transition:transform .15s ease;
+  }
+  .avatar-btn:active{transform:scale(.94);}
+  .avatar-btn img{width:100%;height:100%;object-fit:cover;}
+
+  .header-actions{display:flex;align-items:center;gap:8px;flex:none;margin-top:2px;}
+  .cart-btn{
+    position:relative;flex:none;width:40px;height:40px;border-radius:var(--radius-sm);
+    border:1.5px solid var(--outline);background:var(--bg);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:17px;
+    box-shadow:var(--card-shadow);transition:transform .15s ease;
+  }
+  .cart-btn:active{transform:scale(.94);}
+  .cart-badge{
+    position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;
+    border-radius:999px;background:linear-gradient(135deg,var(--link),var(--outline-strong));
+    color:#fff;font-size:10.5px;font-weight:800;line-height:18px;text-align:center;
+    box-shadow:0 0 0 2px var(--secondary-bg);display:none;
+  }
+  .cart-badge.show{display:block;}
+
+  .back-row{display:flex;align-items:center;gap:8px;padding:16px 4px 10px;cursor:pointer;width:fit-content;}
+  .back-row span{font-size:15px;font-weight:600;color:var(--link);}
+
+  .demo-note{
+    display:none;
+    margin:0 0 16px;padding:12px 14px;
+    background:var(--bg);
+    backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    font-size:12.5px;color:var(--hint);line-height:1.45;
+    box-shadow:var(--card-shadow);
+  }
+  .demo-note b{color:var(--text);}
+  .demo-note.show{display:block;}
+  .demo-note button{
+    background:none;border:none;color:var(--link);font-size:12.5px;font-weight:700;
+    padding:0;margin-top:6px;cursor:pointer;
+  }
+
+  /* tabs */
+  .search-sort-wrap{display:flex;flex-direction:column;gap:8px;margin:0 0 14px;}
+  .search-box{position:relative;}
+  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.65;pointer-events:none;}
+  .search-input{
+    width:100%;border:1.5px solid var(--outline);border-radius:var(--radius-pill);
+    background:var(--bg);color:var(--text);padding:11px 36px;font-size:14.5px;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .search-input:focus{outline:none;border-color:var(--outline-strong);box-shadow:0 0 0 3px var(--glow-soft);}
+  .search-input::placeholder{color:var(--hint);}
+  .search-clear{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);width:27px;height:27px;
+    border:none;background:none;color:var(--hint);font-size:14px;cursor:pointer;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+  }
+  .search-clear:hover{color:var(--text);background:color-mix(in srgb, var(--outline) 22%, transparent);}
+  .sort-select{
+    width:100%;border:1.5px solid var(--outline);border-radius:var(--radius-sm);
+    background:var(--bg);color:var(--text);padding:10px 11px;font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .sort-select:focus{outline:none;border-color:var(--outline-strong);box-shadow:0 0 0 3px var(--glow-soft);}
+  .search-results-info{font-size:12px;color:var(--hint);margin:-4px 2px 12px;}
+  .empty-state{padding:44px 16px;text-align:center;color:var(--hint);font-size:14px;line-height:1.5;}
+  .tabs-wrap{position:relative;margin:0 -18px 16px;padding:0 18px;}
+  .tabs-wrap::before,.tabs-wrap::after{
+    content:'';position:absolute;top:0;bottom:16px;width:18px;pointer-events:none;z-index:1;
+  }
+  .tabs-wrap::before{left:0;background:linear-gradient(90deg,var(--secondary-bg),transparent);}
+  .tabs-wrap::after{right:0;background:linear-gradient(270deg,var(--secondary-bg),transparent);}
+  .tabs{
+    display:flex;gap:6px;overflow-x:auto;padding:2px 2px 0;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain;
+    cursor:grab;user-select:none;
+  }
+  .tabs.dragging{cursor:grabbing;scroll-snap-type:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:none;padding:9px 15px;border-radius:var(--radius-pill);
+    background:var(--bg);border:1.5px solid var(--outline);
+    font-size:14px;font-weight:600;color:var(--hint);
+    cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s,box-shadow .15s;
+  }
+  .tab.active{
+    background:linear-gradient(135deg,var(--link),var(--outline-strong));
+    border-color:var(--outline-strong);color:#fff;
+    box-shadow:0 4px 14px -4px var(--glow);
+  }
+
+  /* list group */
+  .group{
+    position:relative;
+    background:var(--bg);
+    backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));
+    border-radius:var(--radius-lg);
+    border:1.5px solid var(--border);
+    overflow:hidden;
+    margin-bottom:18px;
+    box-shadow:var(--card-shadow);
+  }
+  .group::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:1;
+    background:linear-gradient(90deg,var(--link),var(--outline-strong) 55%,transparent);
+    opacity:.7;
+  }
+  .group::after{
+    content:'';position:absolute;top:0;right:0;width:130px;height:130px;pointer-events:none;
+    background-image:radial-gradient(color-mix(in srgb, var(--outline-strong) 45%, transparent) 1px, transparent 1px);
+    background-size:14px 14px;
+    -webkit-mask-image:radial-gradient(90px 90px at 100% 0%, #000 0%, transparent 75%);
+            mask-image:radial-gradient(90px 90px at 100% 0%, #000 0%, transparent 75%);
+    opacity:.4;
+  }
+  .row{
+    position:relative;z-index:1;
+    padding:14px 16px;
+    cursor:pointer;
+    border-bottom:1px solid var(--border);
+    transition:background .15s;
+  }
+  .group .row:last-of-type{border-bottom:none;}
+  .row:hover{background:color-mix(in srgb, var(--outline) 8%, transparent);}
+  .row-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .row-name{font-size:15.5px;font-weight:700;letter-spacing:-.005em;}
+  .row-desc{font-size:12.5px;color:var(--hint);margin-top:3px;line-height:1.4;}
+  .row-price{font-size:13px;color:var(--hint);white-space:nowrap;font-family:var(--font-mono);}
+  .row-price b{color:var(--text);font-weight:700;}
+  .chev{color:var(--outline-strong);font-size:13px;transition:transform .18s;flex:none;}
+  .row.open .chev{transform:rotate(90deg);}
+
+  .row-form{max-height:0;overflow:hidden;transition:max-height .25s ease;}
+  .row.open .row-form{max-height:380px;}
+  .row-form-inner{padding:6px 0 8px;}
+
+  .field-label{font-size:12px;color:var(--hint);margin:12px 0 7px;font-weight:600;}
+  .qty-control{display:flex;align-items:center;gap:10px;}
+  .qty-btn{
+    width:36px;height:36px;border-radius:var(--radius-sm);border:1.5px solid var(--outline);
+    background:var(--bg);color:var(--link);font-size:18px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;
+    transition:border-color .15s,background .15s;
+  }
+  .qty-btn:hover{border-color:var(--outline-strong);background:color-mix(in srgb, var(--outline) 14%, transparent);}
+  .qty-btn:active{opacity:.6;}
+  .qty-input{
+    flex:1;min-width:0;text-align:center;font-size:16px;font-weight:700;font-family:var(--font-mono);
+    border:1.5px solid var(--outline);border-radius:var(--radius-sm);background:var(--bg);
+    color:var(--text);padding:9px 4px;font-variant-numeric:tabular-nums;
+  }
+  .qty-input:focus{outline:none;border-color:var(--outline-strong);box-shadow:0 0 0 3px var(--glow-soft);}
+  .chips{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;}
+  .chip{
+    padding:6px 11px;border-radius:var(--radius-pill);background:var(--bg);
+    border:1.5px solid var(--outline);font-size:12.5px;color:var(--text);cursor:pointer;
+    font-family:var(--font-mono);transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip.active{
+    background:linear-gradient(135deg,var(--link),var(--outline-strong));
+    border-color:var(--outline-strong);color:#fff;
+  }
+  .link-input{
+    width:100%;border:1.5px solid var(--outline);border-radius:var(--radius-sm);
+    background:var(--bg);color:var(--text);padding:10px 11px;font-size:14.5px;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .link-input:focus{outline:none;border-color:var(--outline-strong);box-shadow:0 0 0 3px var(--glow-soft);}
+  .link-input::placeholder{color:var(--hint);}
+  .link-hint{font-size:11.5px;color:var(--hint);margin-top:6px;}
+  .link-required{border-color:var(--danger) !important;}
+
+  .form-footer{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;}
+  .form-total{font-size:14.5px;font-weight:600;}
+  .add-btn{
+    background:linear-gradient(135deg,var(--link),var(--outline-strong));color:#fff;border:none;border-radius:var(--radius-pill);
+    padding:10px 18px;font-size:14.5px;font-weight:700;cursor:pointer;
+    box-shadow:0 4px 14px -4px var(--glow), inset 0 1px 0 rgba(255,255,255,.25);
+    transition:transform .15s ease,box-shadow .15s ease;
+  }
+  .add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px -4px var(--glow), inset 0 1px 0 rgba(255,255,255,.25);}
+  .add-btn:active{opacity:.85;transform:translateY(0);}
+  .add-btn.added{background:linear-gradient(135deg,var(--good),var(--good));}
+
+  .star{font-family:var(--font-mono);background:linear-gradient(135deg,var(--star-1),var(--star-2));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;}
+
+  /* ---- profile screen ---- */
+  .section-title{font-family:var(--font-display);font-size:15.5px;font-weight:700;margin:0 4px 10px;letter-spacing:-.01em;}
+
+  .profile-card{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;padding:18px 16px;background:var(--bg);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border:1.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:20px;box-shadow:var(--card-shadow);}
+  .profile-card::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background-image:radial-gradient(color-mix(in srgb, var(--outline-strong) 40%, transparent) 1px, transparent 1px);
+    background-size:16px 16px;
+    -webkit-mask-image:radial-gradient(160px 160px at 100% 0%, #000 0%, transparent 78%);
+            mask-image:radial-gradient(160px 160px at 100% 0%, #000 0%, transparent 78%);
+    opacity:.45;
+  }
+  .profile-avatar{position:relative;z-index:1;width:58px;height:58px;border-radius:16px;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
+  .profile-avatar img{width:100%;height:100%;object-fit:cover;}
+  .profile-name{position:relative;z-index:1;font-family:var(--font-display);font-size:16.5px;font-weight:700;}
+  .profile-username{position:relative;z-index:1;font-size:13px;color:var(--hint);margin-top:2px;}
+
+  .balance-card{position:relative;background:var(--bg);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 16px;margin-bottom:20px;overflow:hidden;box-shadow:var(--card-shadow);}
+  .balance-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:1;
+    background:linear-gradient(90deg,var(--sun-2),var(--star-1) 55%,transparent);opacity:.75;
+  }
+  .balance-card::after{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background-image:repeating-linear-gradient(135deg, color-mix(in srgb, var(--sun-2) 22%, transparent) 0 1.5px, transparent 1.5px 15px);
+    -webkit-mask-image:linear-gradient(115deg, transparent 40%, #000 78%, transparent 100%);
+            mask-image:linear-gradient(115deg, transparent 40%, #000 78%, transparent 100%);
+    opacity:.6;
+  }
+  .balance-row{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;}
+  .balance-label{font-size:12.5px;color:var(--hint);}
+  .balance-amount{font-family:var(--font-display);font-size:28px;font-weight:700;margin-top:4px;letter-spacing:-.01em;}
+  .balance-hint{position:relative;z-index:1;font-size:12px;color:var(--hint);margin-top:8px;line-height:1.45;max-width:230px;}
+
+  .switch{position:relative;width:46px;height:27px;flex:none;}
+  .switch input{opacity:0;width:0;height:0;}
+  .switch-track{position:absolute;inset:0;background:var(--border);border-radius:999px;transition:background .15s;cursor:pointer;}
+  .switch-thumb{position:absolute;top:2px;left:2px;width:23px;height:23px;background:#fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s;}
+  .switch input:checked + .switch-track{background:var(--good);}
+  .switch input:checked + .switch-track .switch-thumb{transform:translateX(19px);}
+
+  .promo-card{background:var(--bg);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 16px;margin-bottom:20px;box-shadow:var(--card-shadow);}
+  .promo-row{display:flex;gap:8px;}
+  .promo-row .link-input{flex:1;text-transform:uppercase;font-family:var(--font-mono);letter-spacing:.02em;}
+  .promo-apply{background:linear-gradient(135deg,var(--link),var(--outline-strong));color:#fff;border:none;border-radius:var(--radius-sm);padding:0 17px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px -4px var(--glow);}
+  .promo-msg{font-size:12.5px;margin-top:9px;}
+  .promo-msg.err{color:var(--danger);}
+  .promo-applied{display:flex;align-items:center;justify-content:space-between;background:var(--secondary-bg);border-radius:var(--radius-sm);padding:10px 12px;margin-top:11px;}
+  .promo-applied b{font-size:13.5px;}
+  .promo-remove{background:none;border:none;color:var(--hint);font-size:15px;cursor:pointer;}
+
+  .support-card{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px;box-shadow:var(--card-shadow);}
+  .support-card-text{font-size:13.5px;color:var(--hint);line-height:1.4;}
+  .support-card-text b{color:var(--text);display:block;font-size:14.5px;margin-bottom:2px;}
+  .support-link{flex:none;background:var(--secondary-bg);color:var(--text);border:1.5px solid var(--border);border-radius:var(--radius-pill);padding:9px 15px;font-size:13.5px;font-weight:700;text-decoration:none;white-space:nowrap;}
+
+  /* ---- обязательная подписка на канал ---- */
+  .sub-gate{
+    position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;
+    gap:16px;padding:32px 24px;text-align:center;background:var(--secondary-bg);
+  }
+  .sub-gate.show{display:flex;}
+  .sub-gate .brand-star{font-size:40px;}
+  .sub-gate h2{font-family:var(--font-display);font-size:20px;margin:0;}
+  .sub-gate p{font-size:14px;color:var(--hint);max-width:320px;line-height:1.5;margin:0;}
+  .sub-gate-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px;margin-top:6px;}
+  .sub-gate-actions .add-btn{width:100%;}
+  .sub-gate-recheck{background:none;border:1.5px solid var(--border);color:var(--text);border-radius:var(--radius-pill);padding:10px 18px;font-size:14.5px;font-weight:700;cursor:pointer;}
+  .sub-gate-msg{font-size:12.5px;color:var(--danger);min-height:16px;}
+
+  .order-row{padding:14px 16px;border-bottom:1px solid var(--border);}
+  .group .order-row:last-child{border-bottom:none;}
+  .order-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .order-date{font-size:12px;color:var(--hint);font-family:var(--font-mono);}
+  .order-items{font-size:14px;font-weight:600;margin-top:4px;}
+  .order-link{font-size:12px;color:var(--hint);margin-top:2px;}
+  .order-right{text-align:right;flex:none;}
+  .order-total{font-size:14.5px;font-weight:700;font-family:var(--font-mono);}
+  .status-pill{display:inline-block;margin-top:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;}
+  .status-paid{background:rgba(42,171,238,.14);color:var(--link);}
+  .status-processing{background:rgba(255,159,10,.15);color:var(--amber);}
+  .status-done{background:rgba(47,191,159,.16);color:var(--good);}
+  .empty-state{padding:30px 4px;text-align:center;color:var(--hint);font-size:13.5px;}
+
+  /* cart sheet */
+  .cart-sheet{
+    position:fixed;left:0;right:0;bottom:0;
+    background:var(--bg-solid);
+    backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));
+    border-top-left-radius:24px;border-top-right-radius:24px;
+    border:1.5px solid var(--border);border-bottom:none;
+    box-shadow:0 -6px 24px -6px color-mix(in srgb, var(--outline-strong) 30%, transparent);
+    max-width:480px;margin:0 auto;
+    transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);
+    max-height:78vh;display:flex;flex-direction:column;
+    z-index:20;
+  }
+  .cart-sheet.open{transform:translateY(0);}
+  .cart-handle{padding:12px 0 6px;display:flex;justify-content:center;cursor:pointer;}
+  .cart-handle span{width:38px;height:4px;border-radius:2px;background:var(--border);}
+  .cart-head{padding:4px 20px 12px;font-family:var(--font-display);font-size:17px;font-weight:700;}
+  .cart-items{overflow-y:auto;padding:0 16px;}
+  .cart-item{display:flex;justify-content:space-between;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border);}
+  .cart-item:last-child{border-bottom:none;}
+  .ci-name{font-size:14.5px;font-weight:600;}
+  .ci-meta{font-size:12px;color:var(--hint);margin-top:2px;}
+  .ci-right{display:flex;align-items:center;gap:10px;flex:none;}
+  .ci-price{font-size:14px;font-weight:700;white-space:nowrap;font-family:var(--font-mono);}
+  .ci-remove{width:27px;height:27px;border-radius:50%;border:1.5px solid var(--outline);background:var(--bg);color:var(--hint);font-size:15px;cursor:pointer;}
+  .cart-empty{padding:26px 4px;text-align:center;color:var(--hint);font-size:13.5px;}
+  .cart-summary{padding:12px 20px 6px;border-top:1px solid var(--border);}
+  .sum-line{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;color:var(--hint);font-family:var(--font-mono);}
+  .sum-line.total{color:var(--text);font-weight:700;font-size:15.5px;padding-top:7px;}
+
+  /* bottom bar (shown only outside real Telegram client — inside Telegram we use native MainButton) */
+  .bottom-bar{
+    position:fixed;left:0;right:0;bottom:60px;max-width:480px;margin:0 auto;
+    background:var(--bg-solid);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border-top:1.5px solid var(--border);
+    padding:11px 16px 11px;
+    display:flex;align-items:center;gap:12px;z-index:15;
+    box-shadow:0 -4px 18px -8px color-mix(in srgb, var(--outline-strong) 25%, transparent);
+  }
+
+  /* network nav — переключатель между разными СММ (Telegram / TikTok / ...) */
+  .network-nav{
+    position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;
+    background:var(--bg-solid);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));
+    border-top:1.5px solid var(--border);
+    padding:7px 8px calc(7px + var(--safe-bottom));
+    display:flex;gap:6px;z-index:16;
+  }
+  .net-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 4px;border-radius:14px;cursor:pointer;user-select:none;
+    color:var(--hint);transition:background .15s ease,color .15s ease;
+  }
+  .net-btn .net-icon{font-size:19px;line-height:1;}
+  .net-btn .net-label{font-size:10.5px;font-weight:600;}
+  .net-btn.active{color:var(--link);background:color-mix(in srgb, var(--link) 12%, transparent);}
+  .bb-info{flex:1;min-width:0;cursor:pointer;}
+  .bb-count{font-size:12px;color:var(--hint);}
+  .bb-total{font-size:16px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .pay-btn{
+    background:linear-gradient(135deg,var(--link),var(--outline-strong));color:#fff;
+    border:none;border-radius:var(--radius-pill);
+    padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;
+    box-shadow:0 4px 16px -4px var(--glow), inset 0 1px 0 rgba(255,255,255,.25);
+    transition:transform .15s ease;
+  }
+  .pay-btn:hover:not(:disabled){transform:translateY(-1px);}
+  .pay-btn:disabled{opacity:.4;cursor:default;box-shadow:none;}
+
+  .overlay{position:fixed;inset:0;background:rgba(9,20,30,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:19;}
+  .overlay.show{opacity:1;pointer-events:auto;}
+
+  .success{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(9,20,30,.5);z-index:30;padding:20px;}
+  .success.show{display:flex;}
+  .success-card{background:var(--bg-solid);backdrop-filter:blur(var(--card-blur));-webkit-backdrop-filter:blur(var(--card-blur));border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:30px 24px 26px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 50px -14px color-mix(in srgb, var(--outline-strong) 40%, transparent);}
+  .success-icon{
+    width:52px;height:52px;margin:0 auto 14px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;font-size:26px;
+    background:linear-gradient(155deg,var(--good),color-mix(in srgb, var(--good) 60%, var(--link)));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .success-title{font-family:var(--font-display);font-size:17px;font-weight:700;margin-bottom:7px;}
+  .success-text{font-size:13.5px;color:var(--hint);line-height:1.5;margin-bottom:20px;}
+  .success-close{background:linear-gradient(135deg,var(--link),var(--outline-strong));color:#fff;border:none;border-radius:var(--radius-pill);padding:12px 20px;font-size:14.5px;font-weight:700;cursor:pointer;width:100%;box-shadow:0 4px 14px -4px var(--glow);}
+</style>
+
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== Обязательная подписка на канал ===== -->
+  <div class="sub-gate" id="subGate">
+    <span class="brand-star">⭐</span>
+    <h2>Подпишитесь на канал</h2>
+    <p>Чтобы пользоваться магазином, нужно быть подписанным на наш новостной канал — там анонсы акций и обновлений.</p>
+    <div class="sub-gate-actions">
+      <a class="add-btn" id="subGateJoinBtn" href="https://t.me/yanvismokcoded" target="_blank" rel="noopener">Подписаться на @yanvismokcoded</a>
+      <button class="sub-gate-recheck" id="subGateRecheckBtn">Я подписался — проверить</button>
+    </div>
+    <div class="sub-gate-msg" id="subGateMsg"></div>
+  </div>
+
+  <!-- ===== Экран магазина ===== -->
+
+  <div class="screen active" id="shopScreen">
+    <header>
+      <div class="header-text">
+        <div class="brand">
+          <span class="brand-star">⭐</span>
+          <h1>SMM Store</h1>
+        </div>
+        <p class="subtitle">Продвижение в Telegram — оплата в Telegram Stars</p>
+      </div>
+      <div class="header-actions">
+        <button class="cart-btn" id="cartOpenBtn" aria-label="Корзина">
+          🛒<span class="cart-badge" id="cartBadge">0</span>
+        </button>
+        <button class="avatar-btn" id="avatarBtn"></button>
+      </div>
+    </header>
+
+    <div class="demo-note" id="demoNote">
+      Это демонстрационная версия витрины. Оплата, баланс, промокоды и история заказов здесь показывают, как будет работать процесс — для реальных операций нужно подключить бэкенд (см. <b>server.js</b> рядом с этим файлом).
+      <div><button onclick="document.getElementById('demoNote').classList.remove('show')">Понятно</button></div>
+    </div>
+
+    <div class="search-sort-wrap">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Поиск услуг..." oninput="onSearchInput(this.value)">
+        <button type="button" class="search-clear" id="searchClearBtn" onclick="clearSearch()" style="display:none" aria-label="Очистить">✕</button>
+      </div>
+      <select id="sortSelect" class="sort-select" onchange="onSortChange(this.value)">
+        <option value="default">Сортировка: по умолчанию</option>
+        <option value="price_asc">Цена: сначала дешёвые</option>
+        <option value="price_desc">Цена: сначала дорогие</option>
+        <option value="name_asc">Название: А → Я</option>
+        <option value="name_desc">Название: Я → А</option>
+      </select>
+    </div>
+
+    <div class="tabs-wrap"><div class="tabs" id="tabs"></div></div>
+    <div id="searchInfo" class="search-results-info" style="display:none"></div>
+    <div id="groups"></div>
+  </div>
+
+  <!-- ===== Экран профиля ===== -->
+  <div class="screen" id="profileScreen">
+    <div class="back-row" id="backRow"><span>‹ Магазин</span></div>
+
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div>
+        <div class="profile-name" id="profileName">Гость</div>
+        <div class="profile-username" id="profileUsername"></div>
+      </div>
+    </div>
+
+    <div class="section-title">Баланс</div>
+    <div class="balance-card">
+      <div class="balance-row">
+        <div>
+          <div class="balance-label">Доступно</div>
+          <div class="balance-amount"><span class="star" id="balanceAmount">0</span> ⭐</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="useBalanceToggle">
+          <div class="switch-track"><div class="switch-thumb"></div></div>
+        </label>
+      </div>
+      <div class="balance-hint">Баллы магазина — начисляются кешбэком после оплаты и списываются автоматически, если включить переключатель, при следующем заказе.</div>
+      <button class="add-btn" id="topupOpenBtn" style="position:relative;z-index:1;width:100%;margin-top:14px;">Пополнить баланс ⭐</button>
+    </div>
+
+    <div class="section-title">Промокод</div>
+    <div class="promo-card">
+      <div class="promo-row">
+        <input class="link-input" type="text" id="promoInput" placeholder="Введите код">
+        <button class="promo-apply" id="promoApplyBtn">Активировать</button>
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+    </div>
+
+    <div class="section-title">Поддержка</div>
+    <div class="support-card">
+      <div class="support-card-text"><b>Есть вопрос по заказу?</b>Напишите нам напрямую в Telegram</div>
+      <a class="support-link" id="supportLink" href="https://t.me/irlmetalbat" target="_blank" rel="noopener">@irlmetalbat</a>
+    </div>
+
+    <div class="section-title">История заказов</div>
+    <div class="group" id="ordersGroup"></div>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="cart-sheet" id="cartSheet">
+  <div class="cart-handle" id="cartHandleClose"><span></span></div>
+  <div class="cart-head">Корзина</div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-summary" id="cartSummary"></div>
+</div>
+
+<div class="cart-sheet" id="topupSheet">
+  <div class="cart-handle" id="topupHandleClose"><span></span></div>
+  <div class="cart-head">Пополнить баланс</div>
+  <div style="padding:0 16px 20px;">
+    <div class="field-label">Сумма (⭐)</div>
+    <input class="link-input" type="number" inputmode="numeric" id="topupAmountInput" placeholder="Например, 100" min="1">
+    <div class="chips" id="topupChips"></div>
+    <button class="add-btn" id="topupPayBtn" style="width:100%;margin-top:16px;">Пополнить</button>
+  </div>
+</div>
+
+<div class="bottom-bar" id="bottomBar" style="display:none;">
+  <div class="bb-info" id="bbInfo">
+    <div class="bb-count" id="bbCount">Корзина пуста</div>
+    <div class="bb-total" id="bbTotal"></div>
+  </div>
+  <button class="pay-btn" id="payBtn" disabled>Оплатить</button>
+</div>
+
+<div class="network-nav" id="networkNav"></div>
+
+<div class="success" id="successModal">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Заказ оформлен</div>
+    <div class="success-text" id="successText"></div>
+    <button class="success-close" onclick="closeSuccess()">Готово</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Каталог услуг ----------
+   price1000 — цена в Stars за 1000 единиц. Отредактируйте под свои закупочные цены.
+   target — какое поле показывать в форме заказа, см. LINK_FIELD_CONFIG ниже
+   ('post'/'channel' — Telegram, 'video'/'profile' — TikTok и т.п.).
+
+   Сайт поддерживает несколько "сетей" (СММ-разделов) одновременно —
+   переключаются нижней панелью (см. NETWORKS/renderNetworkNav). Каталог
+   Telegram — ниже как есть; каталог TikTok генерируется скриптом
+   fetch-twiboost-services.js и подставляется в TIKTOK_SERVICES/CATS_TIKTOK
+   (см. блок «TikTok» после телеграм-каталога). */
+const TELEGRAM_SERVICES = [
+  { id:'telegram_просмотры_на_пост_медленные_низкое_качество', cat:'views', name:`Просмотры на пост [Медленные] [Низкое качество]`, desc:'#2735', price1000:0.132, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_медленные_низкое_качество_возможен_недокрут', cat:'views', name:`Просмотры на пост [Медленные] [Низкое качество] [Возможен недокрут]`, desc:'#3324', price1000:0.264, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_пост_средняя_скорость_возможны_задержки', cat:'views', name:`Просмотры на пост [Средняя скорость] [Возможны задержки]`, desc:'#5526', price1000:1.1, min:5, max:100000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_медленные_от_10_просмотров_на_пост', cat:'views', name:`Авто Просмотры [Медленные] [от 10 просмотров на пост]`, desc:'#3302', price1000:0.275, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_иран_с_добавлением_в_статистику', cat:'views', name:`🇮🇷 Просмотры на пост [Иран] [С добавлением в статистику 📊]`, desc:'#4812', price1000:0.385, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_истории', cat:'other', name:`Истории`, desc:'#3171', price1000:1.628, min:1, max:150000, step:1000, target:'post' },
+  { id:'telegram_реакции_позитивные', cat:'reactions', name:`⭐️ Позитивные Реакции [👍 ❤️ 🔥 🎉 👏 💯]`, desc:'#2817', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_негативные', cat:'reactions', name:`⭐️ Негативные Реакции [ 👎 😁 😢 💩 🤮 🤔 🤯 🤬]`, desc:'#2818', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции', cat:'reactions', name:`Реакции [⚡️]`, desc:'#2819', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2820', cat:'reactions', name:`Реакции [🤝]`, desc:'#2820', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2821', cat:'reactions', name:`Реакции [👍]`, desc:'#2821', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2822', cat:'reactions', name:`Реакции [👎]`, desc:'#2822', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2823', cat:'reactions', name:`Реакции [🥴]`, desc:'#2823', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2824', cat:'reactions', name:`Реакции [🖕]`, desc:'#2824', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2825', cat:'reactions', name:`Реакции [😐]`, desc:'#2825', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2826', cat:'reactions', name:`Реакции [🤣]`, desc:'#2826', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2827', cat:'reactions', name:`Реакции [👀]`, desc:'#2827', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2828', cat:'reactions', name:`Реакции [👏]`, desc:'#2828', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2829', cat:'reactions', name:`Реакции [🍌]`, desc:'#2829', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2830', cat:'reactions', name:`Реакции [🏆]`, desc:'#2830', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2831', cat:'reactions', name:`Реакции [🦄]`, desc:'#2831', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2832', cat:'reactions', name:`Реакции [👻]`, desc:'#2832', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2833', cat:'reactions', name:`Реакции [😭]`, desc:'#2833', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2834', cat:'reactions', name:`Реакции [🔥]`, desc:'#2834', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2835', cat:'reactions', name:`Реакции [❤️]`, desc:'#2835', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2836', cat:'reactions', name:`Реакции [🤩]`, desc:'#2836', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2837', cat:'reactions', name:`Реакции [🎄]`, desc:'#2837', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2838', cat:'reactions', name:`Реакции [🎅]`, desc:'#2838', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2839', cat:'reactions', name:`Реакции [☃️]`, desc:'#2839', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2840', cat:'reactions', name:`Реакции [💩]`, desc:'#2840', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2841', cat:'reactions', name:`Реакции [🎉]`, desc:'#2841', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2842', cat:'reactions', name:`Реакции [🤮]`, desc:'#2842', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2843', cat:'reactions', name:`Реакции [😁]`, desc:'#2843', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2844', cat:'reactions', name:`Реакции [🗿]`, desc:'#2844', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2845', cat:'reactions', name:`Реакции [🍾]`, desc:'#2845', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2846', cat:'reactions', name:`Реакции [😢]`, desc:'#2846', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2847', cat:'reactions', name:`Реакции [💊]`, desc:'#2847', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2848', cat:'reactions', name:`Реакции [😱]`, desc:'#2848', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2849', cat:'reactions', name:`Реакции [🙏]`, desc:'#2849', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2850', cat:'reactions', name:`Реакции [👌]`, desc:'#2850', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2851', cat:'reactions', name:`Реакции [🤬]`, desc:'#2851', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2852', cat:'reactions', name:`Реакции [🐳]`, desc:'#2852', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2853', cat:'reactions', name:`Реакции [💯]`, desc:'#2853', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2854', cat:'reactions', name:`Реакции [🕊]`, desc:'#2854', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2855', cat:'reactions', name:`Реакции [🤡]`, desc:'#2855', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2856', cat:'reactions', name:`Реакции [🥰]`, desc:'#2856', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2857', cat:'reactions', name:`Реакции [🤔]`, desc:'#2857', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2858', cat:'reactions', name:`Реакции [🤯]`, desc:'#2858', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2859', cat:'reactions', name:`Реакции [🌚]`, desc:'#2859', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2860', cat:'reactions', name:`Реакции [🌭]`, desc:'#2860', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2861', cat:'reactions', name:`Реакции [🤨]`, desc:'#2861', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2862', cat:'reactions', name:`Реакции [🍓]`, desc:'#2862', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2863', cat:'reactions', name:`Реакции [💋]`, desc:'#2863', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2864', cat:'reactions', name:`Реакции [🤓]`, desc:'#2864', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2865', cat:'reactions', name:`Реакции [👩‍💻]`, desc:'#2865', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2866', cat:'reactions', name:`Реакции [🎃]`, desc:'#2866', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2867', cat:'reactions', name:`Реакции [🙈]`, desc:'#2867', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2868', cat:'reactions', name:`Реакции [😇]`, desc:'#2868', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2869', cat:'reactions', name:`Реакции [😨]`, desc:'#2869', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2870', cat:'reactions', name:`Реакции [✍]`, desc:'#2870', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2871', cat:'reactions', name:`Реакции [🤗]`, desc:'#2871', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2872', cat:'reactions', name:`Реакции [🫡]`, desc:'#2872', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2873', cat:'reactions', name:`Реакции [💅]`, desc:'#2873', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2874', cat:'reactions', name:`Реакции [🤪]`, desc:'#2874', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2875', cat:'reactions', name:`Реакции [🆒]`, desc:'#2875', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2876', cat:'reactions', name:`Реакции [💘]`, desc:'#2876', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2877', cat:'reactions', name:`Реакции [🙉]`, desc:'#2877', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2878', cat:'reactions', name:`Реакции [😘]`, desc:'#2878', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2879', cat:'reactions', name:`Реакции [😎]`, desc:'#2879', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2880', cat:'reactions', name:`Реакции [👾]`, desc:'#2880', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2881', cat:'reactions', name:`Реакции [🤷]`, desc:'#2881', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2882', cat:'reactions', name:`Реакции [😡]`, desc:'#2882', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2883', cat:'reactions', name:`Реакции [💔]`, desc:'#2883', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2884', cat:'reactions', name:`Реакции [🥱]`, desc:'#2884', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2885', cat:'reactions', name:`Реакции [😴]`, desc:'#2885', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2886', cat:'reactions', name:`Реакции [😈]`, desc:'#2886', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций', cat:'reactions', name:`Микс Реакций [ 👾😘💘🌚👀]`, desc:'#2887', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_2888', cat:'reactions', name:`Реакции [❤️‍🔥]`, desc:'#2888', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4029', cat:'reactions', name:`Реакции [👨‍💻]`, desc:'#4029', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4030', cat:'reactions', name:`Реакции [🤷‍]`, desc:'#4030', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4031', cat:'reactions', name:`Реакции [🙊]`, desc:'#4031', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4032', cat:'reactions', name:`Микс Реакций [👍 🙏]`, desc:'#4032', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4033', cat:'reactions', name:`Микс Реакций [ 💯 🤔]`, desc:'#4033', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4034', cat:'reactions', name:`Микс Реакций [💋 💘]`, desc:'#4034', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4035', cat:'reactions', name:`Микс Реакций [🤣 👏]`, desc:'#4035', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4036', cat:'reactions', name:`Микс Реакций [❤️ 💯 🏆 🎉]`, desc:'#4036', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4037', cat:'reactions', name:`Микс Реакций [🕊 🦄 🍓 🎄]`, desc:'#4037', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4038', cat:'reactions', name:`Микс Реакций [🐳 🍾 👻 🎃]`, desc:'#4038', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4039', cat:'reactions', name:`Микс Реакций [ 👎 💔]`, desc:'#4039', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4040', cat:'reactions', name:`Микс Реакций [💩 🤡]`, desc:'#4040', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4041', cat:'reactions', name:`Микс Реакций [😱 😢]`, desc:'#4041', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4042', cat:'reactions', name:`Микс Реакций [🤬 😨]`, desc:'#4042', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4043', cat:'reactions', name:`Микс Реакций [🤮 😭]`, desc:'#4043', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4044', cat:'reactions', name:`Микс Реакций [👎 💩 😱 😢]`, desc:'#4044', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_микс_реакций_4045', cat:'reactions', name:`Микс Реакций [😨 🤯 😱 🤮]`, desc:'#4045', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4046', cat:'reactions', name:`Реакции [🚀]`, desc:'#4046', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4047', cat:'reactions', name:`Реакции [😍]`, desc:'#4047', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_4048', cat:'reactions', name:`Реакции [🤑]`, desc:'#4048', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_premium_кастомные', cat:'reactions', name:`🌟 Premium Реакции [Кастомные]`, desc:'#4188', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4689', cat:'reactions', name:`⭐️ Позитивные Реакции [❤️ 💯 🏆 🎉 🤩 🙏]`, desc:'#4689', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4690', cat:'reactions', name:`⭐️ Позитивные Реакции [❤️‍🔥 🔥 💯 🎉 🥰 😍]`, desc:'#4690', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4691', cat:'reactions', name:`⭐️ Позитивные Реакции [👍 🙏 👀 🤗 💘 😁]`, desc:'#4691', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4692', cat:'reactions', name:`⭐️ Позитивные Реакции [🎉 🎄 ❤️ 💋 💘 🏆]`, desc:'#4692', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4693', cat:'reactions', name:`⭐️ Позитивные Реакции [👌 👍 ❤️ 👀 🤝 💯]`, desc:'#4693', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4694', cat:'reactions', name:`⭐️ Позитивные Реакции [🤔 🤯 🤗 😎 💯 🎉]`, desc:'#4694', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4695', cat:'reactions', name:`⭐️ Позитивные Реакции [😁 🤝 🥰 👏 😍 ❤️]`, desc:'#4695', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_позитивные_4506', cat:'reactions', name:`Позитивные Реакции [👍❤️🔥🎉]`, desc:'#4506', price1000:1.991, min:50, max:850000, step:1000, target:'post' },
+  { id:'telegram_реакции_негативные_4507', cat:'reactions', name:`Негативные Реакции [👎💩😱😢]`, desc:'#4507', price1000:1.991, min:5, max:850000, step:1000, target:'post' },
+  { id:'telegram_авто_реакции_позитивные', cat:'reactions', name:`Позитивные Авто Реакции [👍 ❤️ 🔥 🎉]`, desc:'#3303', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_авто_реакции_негативные', cat:'reactions', name:`Негативные Авто Реакции [ 👎 😁 😢 💩 🤮 🤔 🤯 🤬]`, desc:'#3304', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры', cat:'reactions', name:`Реакции + Просмотры [👍 ❤️ 🔥 🎉 👏]`, desc:'#5238', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5239', cat:'reactions', name:`Реакции + Просмотры [👍 ❤️ 🔥 🎉]`, desc:'#5239', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5240', cat:'reactions', name:`Реакции + Просмотры [🔥]`, desc:'#5240', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5241', cat:'reactions', name:`Реакции + Просмотры [😍]`, desc:'#5241', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5242', cat:'reactions', name:`Реакции + Просмотры [🎉]`, desc:'#5242', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5243', cat:'reactions', name:`Реакции + Просмотры [👍]`, desc:'#5243', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5244', cat:'reactions', name:`Реакции + Просмотры [👎]`, desc:'#5244', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5245', cat:'reactions', name:`Реакции + Просмотры [👏]`, desc:'#5245', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5246', cat:'reactions', name:`Реакции + Просмотры [😁]`, desc:'#5246', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5247', cat:'reactions', name:`Реакции + Просмотры [😡]`, desc:'#5247', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5248', cat:'reactions', name:`Реакции + Просмотры [😢]`, desc:'#5248', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5249', cat:'reactions', name:`Реакции + Просмотры [😭]`, desc:'#5249', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5250', cat:'reactions', name:`Реакции + Просмотры [😱]`, desc:'#5250', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5251', cat:'reactions', name:`Реакции + Просмотры [🤣]`, desc:'#5251', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5252', cat:'reactions', name:`Реакции + Просмотры [🤬]`, desc:'#5252', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_просмотры_5253', cat:'reactions', name:`Реакции + Просмотры [❤️]`, desc:'#5253', price1000:1.628, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_быстрые', cat:'views', name:`⭐️ Просмотры на пост [Быстрые]`, desc:'#4811', price1000:1.463, min:100, max:25000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_арабские_страны_с_добавлением_в_статистику', cat:'views', name:`🇸🇦 Просмотры на пост [Арабские страны] [С добавлением в статистику 📊]`, desc:'#4813', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_китай_с_добавлением_в_статистику', cat:'views', name:`🇨🇳 Просмотры на пост [Китай] [С добавлением в статистику 📊]`, desc:'#4814', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_индия_с_добавлением_в_статистику', cat:'views', name:`🇮🇳 Просмотры на пост [Индия] [С добавлением в статистику 📊]`, desc:'#4815', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_турция_с_добавлением_в_статистику', cat:'views', name:`🇹🇷 Просмотры на пост [Турция] [С добавлением в статистику 📊]`, desc:'#4816', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_германия_с_добавлением_в_статистику', cat:'views', name:`🇩🇪 Просмотры на пост [Германия] [С добавлением в статистику 📊]`, desc:'#4817', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_франция_с_добавлением_в_статистику', cat:'views', name:`🇫🇷 Просмотры на пост [Франция] [С добавлением в статистику 📊]`, desc:'#4818', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_израиль_с_добавлением_в_статистику', cat:'views', name:`🇮🇱 Просмотры на пост [Израиль] [С добавлением в статистику 📊]`, desc:'#4819', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_индонезия_с_добавлением_в_статистику', cat:'views', name:`🇮🇩 Просмотры на пост [Индонезия] [С добавлением в статистику 📊]`, desc:'#4820', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_италия_с_добавлением_в_статистику', cat:'views', name:`🇮🇹 Просмотры на пост [Италия] [С добавлением в статистику 📊]`, desc:'#4821', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_казахстан_с_добавлением_в_статистику', cat:'views', name:`🇰🇿 Просмотры на пост [Казахстан] [С добавлением в статистику 📊]`, desc:'#4822', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_бразилия_с_добавлением_в_статистику', cat:'views', name:`🇧🇷 Просмотры на пост [Бразилия] [С добавлением в статистику 📊]`, desc:'#4823', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_низкое_качество_на_пост_микс_13_стран', cat:'views', name:`Просмотры на пост [Микс 13 стран] [🇷🇺🇰🇿🇸🇦🇨🇳🇮🇳🇹🇷🇩🇪🇫🇷🇮🇱🇮🇩🇮🇹🇧🇷🇮🇷]`, desc:'#4824', price1000:1.716, min:10, max:1000000, step:1000, target:'post' },
+  { id:'telegram_репосты', cat:'other', name:`Репосты`, desc:'#1527', price1000:3.245, min:1, max:150000, step:1000, target:'post' },
+  { id:'telegram_подписчики_рефилл_30_дней_высокие_списания_читайте_описание', cat:'subs', name:`🔥🔥 Подписчики [Рефилл 30 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3036', price1000:2.431, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_на_пост_отображаются_в_статистике_быстрые', cat:'views', name:`⭐️🇷🇺 Просмотры на пост [Отображаются в статистике] [Быстрые]`, desc:'#5535', price1000:2.299, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_пост_быстрые_всегда_стабильны_снг', cat:'views', name:`⭐️ Просмотры на пост [Быстрые] [Всегда стабильны] [СНГ]`, desc:'#2900', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_быстрые_всегда_стабильны', cat:'views', name:`⭐️ Просмотры на пост [Быстрые] [Всегда стабильны] [🇷🇺 🇮🇳 🇨🇳 🇹🇷 🇸🇦 🇮🇱 🇰🇷 🇺🇸 🇩🇪]`, desc:'#4213', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_россия_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇷🇺 Просмотры на пост [Россия] [Быстрые] [Всегда стабильны]`, desc:'#4217', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_быстрые_4447', cat:'views', name:`⭐️ Просмотры на пост [Быстрые]`, desc:'#4447', price1000:3.245, min:1, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_пост_моментальные', cat:'views', name:`⭐️ Просмотры на пост [Моментальные]`, desc:'#4703', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_польша_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇵🇱 Просмотры на пост [Польша] [Быстрые] [Всегда стабильны]`, desc:'#4210', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_германия_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇩🇪 Просмотры на пост [Германия] [Быстрые] [Всегда стабильны]`, desc:'#4211', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_великобритания_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇬🇧 Просмотры на пост [Великобритания] [Быстрые] [Всегда стабильны]`, desc:'#4212', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_украина_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇺🇦 Просмотры на пост [Украина] [Быстрые] [Всегда стабильны]`, desc:'#4214', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_казахстан_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇰🇿 Просмотры на пост [Казахстан] [Быстрые] [Всегда стабильны]`, desc:'#4215', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_на_пост_cша_быстрые_всегда_стабильны', cat:'views', name:`⭐️🇺🇸 Просмотры на пост [CША] [Быстрые] [Всегда стабильны]`, desc:'#4216', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые_от_1_просмотра_на_пост', cat:'views', name:`⭐️ Авто Просмотры [Быстрые] [от 1 просмотра на пост]`, desc:'#4087', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_россия_быстрые_от_1_просмотра_на_пост', cat:'views', name:`⭐️🇷🇺 Авто Просмотры [Россия] [Быстрые] [от 1 просмотра на пост]`, desc:'#4337', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые_от_1_просмотра_на_пост_4455', cat:'views', name:`Авто Просмотры [Быстрые] [от 1 просмотра на пост]`, desc:'#4455', price1000:3.245, min:1, max:1000000, step:1000, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые_снг_от_1_просмотра_на_пост', cat:'views', name:`⭐️ Авто Просмотры [Быстрые] [СНГ] [от 1 просмотра на пост]`, desc:'#5160', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые_от_1_просмотра_на_пост_5161', cat:'views', name:`⭐️ Авто Просмотры [Быстрые] [🇷🇺 🇮🇳 🇨🇳 🇹🇷 🇸🇦 🇮🇱 🇰🇷 🇺🇸 🇩🇪] [от 1 просмотра на пост]`, desc:'#5161', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [Читайте описание]`, desc:'#3740', price1000:3.245, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_1_день_без_списаний', cat:'subs', name:`⭐️ Подписчики [1 день без списаний]`, desc:'#5527', price1000:3.465, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_3_дня_без_списаний', cat:'subs', name:`⭐️ Подписчики [3 дня без списаний]`, desc:'#4767', price1000:4.774, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_на_пост_быстрые_2031', cat:'views', name:`Просмотры на пост [Быстрые]`, desc:'#2031', price1000:4.752, min:20, max:10000, step:100, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_1_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [1 в минуту] [Читайте описание]`, desc:'#4704', price1000:4.873, min:1, max:30000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_2_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [2 в минуту] [Читайте описание]`, desc:'#4705', price1000:4.873, min:2, max:30000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_5_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [5 в минуту] [Читайте описание]`, desc:'#4706', price1000:4.873, min:5, max:30000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_10_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [10 в минуту] [Читайте описание]`, desc:'#4707', price1000:4.873, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_20_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [20 в минуту] [Читайте описание]`, desc:'#4708', price1000:4.873, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_50_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [50 в минуту] [Читайте описание]`, desc:'#4709', price1000:4.873, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_выбор_скорости_в_мин_поста_70_читайте_описание', cat:'views', name:`Просмотры поста [Для закрытых каналов] [70 в минуту] [Читайте описание]`, desc:'#4710', price1000:4.873, min:70, max:30000, step:500, target:'post' },
+  { id:'telegram_умные_просмотры_для_tgstat_и_telemetr_лесенкой_имитация_живой_активности', cat:'views', name:`Умные Просмотры [Имитация живой активности для Tgstat и Telemetr]`, desc:'#4702', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_умные_просмотры_для_tgstat_и_telemetr_лесенкой_авто_имитация_живой_активности', cat:'views', name:`⚙️ Умные АВТО Просмотры [Имитация живой активности для Tgstat и Telemetr]`, desc:'#4711', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_10', cat:'views', name:`Просмотры на пост [10 в минуту]`, desc:'#4405', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_1', cat:'views', name:`Просмотры на пост [1 в минуту]`, desc:'#4406', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_2', cat:'views', name:`Просмотры на пост [2 в минуту]`, desc:'#4407', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_5', cat:'views', name:`Просмотры на пост [5 в минуту]`, desc:'#4408', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_50', cat:'views', name:`Просмотры на пост [50 в минуту]`, desc:'#4409', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_20', cat:'views', name:`Просмотры на пост [20 в минуту]`, desc:'#4410', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_выбор_скорости_в_минуту_на_пост_70', cat:'views', name:`Просмотры на пост [70 в минуту]`, desc:'#4411', price1000:4.873, min:1, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_альбомы_до_20_медиа', cat:'views', name:`Просмотры на пост [Альбомы до 20 медиа]`, desc:'#5382', price1000:6.49, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_без_гарантии_база_1_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Без гарантии ⛔️] [База #1] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3958', price1000:7.304, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_без_гарантии_база_2_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Без гарантии ⛔️] [База #2] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3346', price1000:7.634, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание', cat:'reactions', name:`Реакция на пост в закрытом канале [👍 ❤️ 🔥 🎉] [Читайте описание❗️]`, desc:'#5221', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5222', cat:'reactions', name:`Реакция на пост в закрытом канале [👍 ❤️ 🔥 🎉 👏] [Читайте описание❗️]`, desc:'#5222', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5223', cat:'reactions', name:`Реакция на пост в закрытом канале [💩 👎 😢 😱 🤮 😭] [Читайте описание❗️]`, desc:'#5223', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5224', cat:'reactions', name:`Реакция на пост в закрытом канале [🔥] [Читайте описание❗️]`, desc:'#5224', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5225', cat:'reactions', name:`Реакция на пост в закрытом канале [❤️] [Читайте описание❗️]`, desc:'#5225', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5226', cat:'reactions', name:`Реакция на пост в закрытом канале [😍] [Читайте описание❗️]`, desc:'#5226', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5227', cat:'reactions', name:`Реакция на пост в закрытом канале [👍] [Читайте описание❗️]`, desc:'#5227', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5228', cat:'reactions', name:`Реакция на пост в закрытом канале [👎] [Читайте описание❗️]`, desc:'#5228', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5229', cat:'reactions', name:`Реакция на пост в закрытом канале [🎉] [Читайте описание❗️]`, desc:'#5229', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5230', cat:'reactions', name:`Реакция на пост в закрытом канале [👏] [Читайте описание❗️]`, desc:'#5230', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5231', cat:'reactions', name:`Реакция на пост в закрытом канале [😁] [Читайте описание❗️]`, desc:'#5231', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5232', cat:'reactions', name:`Реакция на пост в закрытом канале [😡] [Читайте описание❗️]`, desc:'#5232', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5233', cat:'reactions', name:`Реакция на пост в закрытом канале [😢] [Читайте описание❗️]`, desc:'#5233', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5234', cat:'reactions', name:`Реакция на пост в закрытом канале [😭] [Читайте описание❗️]`, desc:'#5234', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5235', cat:'reactions', name:`Реакция на пост в закрытом канале [😱] [Читайте описание❗️]`, desc:'#5235', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5236', cat:'reactions', name:`Реакция на пост в закрытом канале [🤣] [Читайте описание❗️]`, desc:'#5236', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5237', cat:'reactions', name:`Реакция на пост в закрытом канале [🤬] [Читайте описание❗️]`, desc:'#5237', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_1_реакция_на_пост_в_закрытом_канале_читайте_описание_5269', cat:'reactions', name:`Реакция на пост в закрытом канале [💋] [Читайте описание❗️]`, desc:'#5269', price1000:7.304, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_голоса_в_опрос', cat:'other', name:`Голоса в опрос`, desc:'#2812', price1000:8.118, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_пост_быстрые_с_реальных_аккаунтов', cat:'views', name:`Просмотры на пост [Быстрые] [С реальных аккаунтов]`, desc:'#1993', price1000:7.711, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_просмотры_1_пост_россия_с_поиска_статистика', cat:'views', name:`🇷🇺 Просмотры [1 пост] [Россия] [С поиска + Статистика]`, desc:'#1612', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_сша_с_поиска_статистика', cat:'views', name:`🇺🇸 Просмотры [1 пост] [США] [С поиска + Статистика]`, desc:'#1614', price1000:8.118, min:50, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_китай_с_поиска_статистика', cat:'views', name:`🇨🇳 Просмотры [1 пост] [Китай] [С поиска + Статистика]`, desc:'#1615', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_италия_с_поиска_статистика', cat:'views', name:`🇮🇹 Просмотры [1 пост] [Италия] [С поиска + Статистика]`, desc:'#1616', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_арабы_с_поиска_статистика', cat:'views', name:`🇸🇦 Просмотры [1 пост] [Арабы] [С поиска + Статистика]`, desc:'#1617', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_турция_с_поиска_статистика', cat:'views', name:`🇹🇷 Просмотры [1 пост] [Турция] [С поиска + Статистика]`, desc:'#1618', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_казахстан_с_поиска_статистика', cat:'views', name:`🇰🇿 Просмотры [1 пост] [Казахстан] [С поиска + Статистика]`, desc:'#1619', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_узбекистан_с_поиска_статистика', cat:'views', name:`🇺🇿 Просмотры [1 пост] [Узбекистан] [С поиска + Статистика]`, desc:'#1620', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_украина_с_поиска_статистика', cat:'views', name:`🇺🇦 Просмотры [1 пост] [Украина] [С поиска + Статистика]`, desc:'#1621', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_германия_с_поиска_статистика', cat:'views', name:`🇩🇪 Просмотры [1 пост] [Германия] [С поиска + Статистика]`, desc:'#1622', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_израиль_с_поиска_статистика', cat:'views', name:`🇮🇱 Просмотры [1 пост] [Израиль] [С поиска + Статистика]`, desc:'#1623', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_высокое_качество_1_пост_индия_отображаются_в_статистике', cat:'views', name:`🇮🇳 Просмотры [1 пост] [Индия] [Отображаются в статистике 📊]`, desc:'#3133', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_арабские_статистика', cat:'views', name:`🇦🇪🙎‍♂️ Просмотры [Арабские] [+ Статистика 📊]`, desc:'#2746', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_китай_статистика', cat:'views', name:`🇨🇳🙎‍♂️ Просмотры [Китай] [+ Статистика 📊]`, desc:'#2747', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_индия_статистика', cat:'views', name:`🇮🇳🙎‍♂️ Просмотры [Индия] [+ Статистика 📊]`, desc:'#2748', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_россия_статистика', cat:'views', name:`🇷🇺🙎‍♂️ Просмотры [Россия] [+ Статистика 📊]`, desc:'#2749', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_сша_статистика', cat:'views', name:`🇺🇸🙎‍♂️ Просмотры [США] [+ Статистика 📊]`, desc:'#2750', price1000:8.118, min:50, max:1000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_узбекистан_статистика', cat:'views', name:`🇺🇿🙎‍♂️ Просмотры [Узбекистан] [+ Статистика 📊]`, desc:'#2751', price1000:8.118, min:100, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_казахстан_статистика', cat:'views', name:`🇰🇿🙎‍♂️ Просмотры [Казахстан] [+ Статистика 📊]`, desc:'#2752', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_украина_статистика', cat:'views', name:`🇺🇦🙎‍♂️ Просмотры [Украина] [+ Статистика 📊]`, desc:'#2753', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_италия_статистика', cat:'views', name:`🇮🇹🙎‍♂️ Просмотры [Италия] [+ Статистика 📊]`, desc:'#2754', price1000:8.118, min:50, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_израиль_статистика', cat:'views', name:`🇮🇱🙎‍♂️ Просмотры [Израиль] [+ Статистика 📊]`, desc:'#2755', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_турция_статистика', cat:'views', name:`🇹🇷🙎‍♂️ Просмотры [Турция] [+ Статистика 📊]`, desc:'#2756', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_германия_статистика', cat:'views', name:`🇩🇪🙎‍♂️ Просмотры [Германия] [+ Статистика 📊]`, desc:'#2757', price1000:8.118, min:50, max:100000, step:500, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые_от_10_просмотров_на_пост_с_реальных_аккаунтов', cat:'views', name:`Авто Просмотры [Быстрые] [от 10 просмотров на пост] [С реальных аккаунтов]`, desc:'#5132', price1000:7.711, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_старты_бота_высокое_качество_бы', cat:'bot_starts', name:`Старты Бота - [Высокое качество] [Быстрые] [База #1]`, desc:'#4604', price1000:9.548, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_на_пост_быстрые_5162', cat:'views', name:`Просмотры на пост [Быстрые]`, desc:'#5162', price1000:9.251, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_авто_просмотры_быстрые', cat:'views', name:`Авто Просмотры [Быстрые]`, desc:'#5164', price1000:9.251, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_пост_моментальные_5163', cat:'views', name:`Просмотры на пост [Моментальные]`, desc:'#5163', price1000:10.791, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_авто_просмотры_моментальные', cat:'views', name:`Авто Просмотры [Моментальные]`, desc:'#5165', price1000:10.791, min:10, max:500000, step:1000, target:'post' },
+  { id:'telegram_подписчики_7_дней_без_списаний_бонус_15_от_заказа', cat:'subs', name:`⭐️ Подписчики [7 дней без списаний] [+ Бонус 15% от заказа]`, desc:'#5305', price1000:11.913, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_рефилл_7_дней_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Рефилл 7 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#1292', price1000:13.794, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_на_пост', cat:'views', name:`Premium Просмотры на пост`, desc:'#4726', price1000:13.629, min:10, max:150000, step:500, target:'post' },
+  { id:'telegram_старты_бота_активность_для_выво', cat:'bot_starts', name:`Старты Бота + Активность - [Для вывода в ТОП по 🇷🇺 России]`, desc:'#3992', price1000:16.225, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_старты_бота_активность_таргетир', cat:'bot_starts', name:`Старты Бота + Активность - [Таргетированные]`, desc:'#3995', price1000:16.225, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_3_дня', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 3 дня ♻️]`, desc:'#3765', price1000:16.225, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_5_последних', cat:'views', name:`🇷🇺 Просмотры [5 последних постов]`, desc:'#1695', price1000:16.225, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_premium_просмотры_поста_на_пост_3341', cat:'views', name:`Premium Просмотры на пост`, desc:'#3341', price1000:16.225, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_premium_просмотры_поста_на_пост_3551', cat:'views', name:`Premium Просмотры на пост`, desc:'#3551', price1000:16.225, min:10, max:30000, step:500, target:'post' },
+  { id:'telegram_просмотры_таргетированные_живые_микс_статистика', cat:'views', name:`🙎‍♂️ Просмотры [Микс] [+ Статистика 📊]`, desc:'#2745', price1000:17.039, min:10, max:50000000, step:1000, target:'post' },
+  { id:'telegram_подписчики_рефилл_15_дней_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Рефилл 15 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3092', price1000:17.853, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_рефилл_30_дней_высокие_списания_читайте_описание_3837', cat:'subs', name:`Подписчики [Рефилл 30 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3837', price1000:17.853, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_2_позитивные_на_пост_в_закрытом_канале_читайте_описание', cat:'reactions', name:`Позитивные Реакции на пост в закрытом канале [👍 ❤️ 🔥 🎉🤩 😁] [Читайте описание❗️]`, desc:'#4336', price1000:17.765, min:1, max:1000, step:10, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_2_реакция_на_пост_в_закрытом_канале_читайте_описание', cat:'reactions', name:`Реакция на пост в закрытом канале [👍] [Читайте описание❗️]`, desc:'#4351', price1000:17.765, min:1, max:1000, step:10, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_2_реакция_на_пост_в_закрытом_канале_читайте_описание_4353', cat:'reactions', name:`Реакция на пост в закрытом канале [❤️ 🔥] [Читайте описание❗️]`, desc:'#4353', price1000:17.765, min:1, max:1000, step:10, target:'post' },
+  { id:'telegram_умные_просмотры_для_tgstat_и_telemetr_лесенкой', cat:'views', name:`Умные Просмотры [Лесенкой]`, desc:'#4340', price1000:17.765, min:300, max:500000, step:1000, target:'post' },
+  { id:'telegram_умные_просмотры_для_tgstat_и_telemetr_лесенкой_v2', cat:'views', name:`Умные Просмотры [Лесенкой] V2`, desc:'#4347', price1000:17.765, min:300, max:200000, step:1000, target:'post' },
+  { id:'telegram_старты_бота_низкое_качество', cat:'bot_starts', name:`Старты Бота - [Низкое качество]`, desc:'#2231', price1000:23.067, min:100, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_30_дней_без_списаний', cat:'subs', name:`⭐️ Подписчики [30 дней без списаний]`, desc:'#5536', price1000:22.726, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_гарантия_30_дней_бонус_15_от_заказа', cat:'subs', name:`Подписчики [Гарантия 30 дней ♻️] [+ Бонус 15% от заказа]`, desc:'#5304', price1000:23.584, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_7_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 7 дней ♻️]`, desc:'#4003', price1000:24.343, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_рефилл_60_дней_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Рефилл 60 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#2496', price1000:25.971, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_14_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 14 дней ♻️]`, desc:'#4448', price1000:25.971, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_старты_бота_высокое_качество_бы_2', cat:'bot_starts', name:`Старты Бота - [Высокое качество] [Быстрые] [База #2]`, desc:'#3576', price1000:27.753, min:50, max:40000, step:500, target:'channel' },
+  { id:'telegram_подписчики_60_дней_без_списаний', cat:'subs', name:`⭐️ Подписчики [60 дней без списаний]`, desc:'#5303', price1000:28.644, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_90_дней_без_списаний', cat:'subs', name:`⭐️ Подписчики [90 дней без списаний]`, desc:'#5302', price1000:30.547, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_старты_бота_россия', cat:'bot_starts', name:`Старты Бота - [🇷🇺 Россия]`, desc:'#3917', price1000:30.833, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_рефилл_90_дней_высокие_списания_читайте_описание', cat:'subs', name:`Подписчики [Рефилл 90 дней ♻️] [‼️ Высокие списания] [‼️ Читайте описание]`, desc:'#3054', price1000:32.461, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_украина_3_дня_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [3 дня без списаний]`, desc:'#4699', price1000:32.384, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_10_последних', cat:'views', name:`🇷🇺 Просмотры [10 последних постов]`, desc:'#1696', price1000:32.461, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_premium_просмотры_историй_канал_аккаунт', cat:'views', name:`⭐️ Premium Просмотры историй [Канал/Аккаунт]`, desc:'#2690', price1000:32.461, min:10, max:100000, step:500, target:'post' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_5', cat:'views', name:`Просмотры [Последние 5 постов]`, desc:'#4732', price1000:32.461, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_5_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 5 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4878', price1000:32.461, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_5_читайте_описание', cat:'views', name:`Просмотры на 5 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4887', price1000:32.461, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_без_списаний_навсегда', cat:'subs', name:`⭐️ Подписчики [Без списаний навсегда]`, desc:'#5537', price1000:34.463, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_клики_по_рекламе_tg_ads', cat:'other', name:`Клики по рекламе TG ADS`, desc:'#5021', price1000:38.951, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_подписчики_украина_7_дней_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [7 дней без списаний]`, desc:'#4700', price1000:40.084, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_180_дней_без_списаний_бонус_15_от_заказа', cat:'subs', name:`⭐️ Подписчики [180 дней без списаний] [+ Бонус 15% от заказа]`, desc:'#5301', price1000:40.953, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_3_дня_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [3 дня без списаний]`, desc:'#2700', price1000:46.222, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_без_списаний_пожизненная_гарантия_бонус_15_от_заказа_база_2', cat:'subs', name:`Подписчики без списаний [Пожизненная гарантия ♻️] [+ Бонус 15% от заказа] [База #2]`, desc:'#5300', price1000:48.4, min:1, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_быстрые_20_30_дней_без_списаний', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [20-30 дней без списаний 🌟]`, desc:'#3091', price1000:48.686, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_без_списаний_пожизненная_гарантия_для_заказов_от_100к_подпис', cat:'subs', name:`⭐️ Подписчики без списаний [Пожизненная гарантия ♻️] [Для заказов от 100К подписчиков]`, desc:'#5525', price1000:49.643, min:100000, max:10000000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_пожизненная_гарантия_база_3', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [Пожизненная гарантия ♻️] [База #3]`, desc:'#4961', price1000:51.942, min:20, max:200000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_без_списаний_пожизненная_гарантия', cat:'subs', name:`⭐️ Подписчики без списаний [Пожизненная гарантия ♻️]`, desc:'#4485', price1000:52.745, min:10, max:10000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_быстрые_90_дней_без_списаний', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [90 дней без списаний]`, desc:'#3423', price1000:54.758, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_украина_14_дней_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [14 дней без списаний]`, desc:'#4701', price1000:53.966, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_30_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 30 дней ♻️]`, desc:'#3288', price1000:56.804, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_7_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [7 дней без списаний]`, desc:'#4257', price1000:56.122, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_россия_20_последних_постов', cat:'views', name:`🇷🇺 Premium Просмотры [Россия] [20 последних постов]`, desc:'#3165', price1000:56.804, min:100, max:60000, step:500, target:'post' },
+  { id:'telegram_подписчики_быстрые_60_дней_без_списаний', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [60 дней без списаний]`, desc:'#3422', price1000:58.432, min:1, max:100000, step:500, target:'channel' },
+  { id:'telegram_старты_бота_через_поиск_ключевы', cat:'bot_starts', name:`Старты Бота - [Через поиск ключевых слов + 🤖 ИИ]`, desc:'#4910', price1000:64.922, min:10, max:1000000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_20_последних', cat:'views', name:`🇷🇺 Просмотры [20 последних постов]`, desc:'#1697', price1000:64.922, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_1_20_читайте_описание', cat:'views', name:`🇷🇺 Просмотры [1-20 постов] [Читайте описание]`, desc:'#2252', price1000:65.45, min:10, max:245000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_10', cat:'views', name:`Просмотры [Последние 10 постов]`, desc:'#4733', price1000:64.922, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_10_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 10 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4879', price1000:64.922, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_10_читайте_описание', cat:'views', name:`Просмотры на 10 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4888', price1000:64.922, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_premium_просмотры_поста_последние_5_постов', cat:'views', name:`Premium Просмотры [Последние 5 постов]`, desc:'#4727', price1000:68.167, min:10, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_таргетированные_сша_быстрые_гарантия_90_дней', cat:'subs_us', name:`🇺🇸 Подписчики [США] [Быстрые] [Гарантия 90 дней ♻️]`, desc:'#2595', price1000:71.412, min:500, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_30_дней_без_списаний', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [30 дней без списаний 🌟]`, desc:'#3459', price1000:73.04, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_старты_бота_активность', cat:'bot_starts', name:`Старты Бота + Активность`, desc:'#5034', price1000:74.294, min:10, max:500000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_20_последние', cat:'views', name:`🇷🇺 Просмотры на 20 последние постов [Россия]`, desc:'#3177', price1000:74.855, min:100, max:30000, step:500, target:'post' },
+  { id:'telegram_подписчики_быстрые_90_дней_без_списаний_3836', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [90 дней без списаний 🌟]`, desc:'#3836', price1000:76.373, min:1, max:500000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_14_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [14 дней без списаний]`, desc:'#3289', price1000:75.933, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_европейские_быстрые_гарантия_60_дней', cat:'subs_other', name:`⭐️ 🇪🇺 Подписчики [Европейские] [Быстрые] [Гарантия 60 дней ♻️]`, desc:'#2474', price1000:77.902, min:500, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [3 дня]`, desc:'#5347', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня_5350', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [3 дня]`, desc:'#5350', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня_5357', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [3 дня]`, desc:'#5357', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня_5358', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [3 дня]`, desc:'#5358', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня_5365', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [3 дня]`, desc:'#5365', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_3_дня_5372', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [3 дня]`, desc:'#5372', price1000:77.099, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_60_дней_без_списаний_3835', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [60 дней без списаний 🌟]`, desc:'#3835', price1000:81.147, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_5_постов_3342', cat:'views', name:`Premium Просмотры [Последние 5 постов]`, desc:'#3342', price1000:81.147, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_гарантия_30_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Гарантия 30 дней ♻️]`, desc:'#5178', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_гарантия_30_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Гарантия 30 дней ♻️]`, desc:'#5180', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_мужчины_гарантия_30_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Мужчины] [Гарантия 30 дней ♻️]`, desc:'#5184', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_женщины_гарантия_30_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Женщины] [Гарантия 30 дней ♻️]`, desc:'#5185', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_мужчины_гарантия_30_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Мужчины] [Гарантия 30 дней ♻️]`, desc:'#5190', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_женщины_гарантия_30_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Женщины] [Гарантия 30 дней ♻️]`, desc:'#5191', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_гарантия_30_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Гарантия 30 дней ♻️]`, desc:'#5206', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_мужчины_гарантия_30_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Мужчины] [Гарантия 30 дней ♻️]`, desc:'#5207', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_женщины_гарантия_30_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Женщины] [Гарантия 30 дней ♻️]`, desc:'#5208', price1000:87.648, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_просмотры_на_пост_для_вывода_в_топ_по_россии_быстрые_читайте_описание', cat:'views', name:`⭐️🇷🇺 Просмотры на пост [Для вывода в ТОП по России] [Быстрые] [Читайте описание!]`, desc:'#2477', price1000:93.5, min:20, max:100000, step:500, target:'post' },
+  { id:'telegram_подписчики_быстрые_гарантия_60_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 60 дней ♻️]`, desc:'#2086', price1000:95.755, min:500, max:200000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_пожизненная_гарантия_база_4', cat:'subs', name:`🌟🔥 Подписчики [Быстрые] [Пожизненная гарантия ♻️] [База #4]`, desc:'#4284', price1000:97.383, min:10, max:10000000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_россия_хорошее_качество_30_дней_без_списаний', cat:'subs_ru', name:`⭐🇷🇺 Подписчики [Россия] [Хорошее качество] [30 дней без списаний]`, desc:'#3771', price1000:97.383, min:10, max:20000, step:100, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_европейские_высокое_качество_30_дней_без_списаний', cat:'subs_other', name:`⭐️ 🇪🇺 Подписчики [Европейские] [Высокое качество] [30 дней без списаний]`, desc:'#2740', price1000:97.383, min:10, max:30000, step:500, target:'channel' },
+  { id:'telegram_подписчики_украина_30_дней_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [30 дней без списаний]`, desc:'#4049', price1000:98.681, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_индия_30_дней_без_списаний', cat:'subs_other', name:`🇮🇳 Подписчики [Индия] [30 дней без списаний]`, desc:'#2980', price1000:102.168, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ии_90_дней_без_списаний_из_поиска', cat:'subs', name:`🤖🔥 ИИ Подписчики [90 дней без списаний] [Из поиска]`, desc:'#4950', price1000:107.932, min:100, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_90_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 90 дней ♻️]`, desc:'#3093', price1000:111.991, min:500, max:200000, step:500, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_1_20_для_вывода_в_топ_читайте_описание', cat:'views', name:`🇷🇺 Просмотры [1-20 постов] [Для вывода в топ] [Читайте описание]`, desc:'#2251', price1000:112.2, min:10, max:95000, step:500, target:'post' },
+  { id:'telegram_подписчики_таргетированные_сша_без_списаний', cat:'subs_us', name:`⭐️🇺🇸 Подписчики [США] [Без списаний]`, desc:'#2742', price1000:113.608, min:10, max:10000, step:100, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_узбекистан', cat:'subs_uz', name:`🇺🇿 Подписчики [Узбекистан]`, desc:'#3337', price1000:114.928, min:10, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_любые_тематики_30_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [Любые тематики] [30 дней без списаний]`, desc:'#2016', price1000:123.354, min:10, max:500000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_украина_60_дней_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [60 дней без списаний]`, desc:'#4050', price1000:123.354, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_хорошее_качество_60_дней_без_списаний', cat:'subs_ru', name:`⭐🇷🇺 Подписчики [Россия] [Хорошее качество] [60 дней без списаний]`, desc:'#4256', price1000:129.844, min:10, max:30000, step:500, target:'channel' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_20', cat:'views', name:`Просмотры [Последние 20 постов]`, desc:'#4734', price1000:129.844, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_20_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 20 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4880', price1000:129.844, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_20_читайте_описание', cat:'views', name:`Просмотры на 20 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4889', price1000:129.844, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_быстрые_гарантия_120_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 120 дней ♻️]`, desc:'#4244', price1000:144.452, min:500, max:300000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_гарантия_60_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Гарантия 60 дней ♻️]`, desc:'#5179', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_гарантия_60_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Гарантия 60 дней ♻️]`, desc:'#5181', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_мужчины_гарантия_60_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Мужчины] [Гарантия 60 дней ♻️]`, desc:'#5186', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_женщины_гарантия_60_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Женщины] [Гарантия 60 дней ♻️]`, desc:'#5187', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_мужчины_гарантия_60_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Мужчины] [Гарантия 60 дней ♻️]`, desc:'#5198', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_женщины_гарантия_60_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Женщины] [Гарантия 60 дней ♻️]`, desc:'#5199', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_гарантия_60_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Гарантия 60 дней ♻️]`, desc:'#5209', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_женщины_гарантия_60_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Женщины] [Гарантия 60 дней ♻️]`, desc:'#5210', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_мужчины_гарантия_60_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Мужчины] [Гарантия 60 дней ♻️]`, desc:'#5211', price1000:146.069, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_украина_90_дней_без_списаний', cat:'subs_ua', name:`⭐️🇺🇦 Подписчики [Украина] [90 дней без списаний]`, desc:'#4051', price1000:148.016, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_россия_с_поиска', cat:'views', name:`🇷🇺 Premium Просмотры [Россия] [С поиска]`, desc:'#2563', price1000:152.757, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [7 дней]`, desc:'#4951', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней_4955', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [7 дней]`, desc:'#4955', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней_5351', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [7 дней]`, desc:'#5351', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней_5359', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [7 дней]`, desc:'#5359', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней_5366', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [7 дней]`, desc:'#5366', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_7_дней_5373', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [7 дней]`, desc:'#5373', price1000:154.187, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_без_гарантии', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Без гарантии]`, desc:'#4419', price1000:157.432, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_180_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 180 дней ♻️]`, desc:'#3456', price1000:160.677, min:500, max:500000, step:500, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_китайские_быстрые_гарантия_30_дней', cat:'subs_cn', name:`⭐️ 🇨🇳 Подписчики [Китайские] [Быстрые] [Гарантия 30 дней ♻️]`, desc:'#2475', price1000:160.677, min:500, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_старты_бота_активность', cat:'bot_starts', name:`Premium Старты Бота + Активность`, desc:'#3051', price1000:162.305, min:10, max:300000, step:1000, target:'channel' },
+  { id:'telegram_premium_старты_бота_таргетирова', cat:'bot_starts', name:`Premium Старты Бота [Таргетированные]`, desc:'#3999', price1000:162.305, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_старты_бота_активность_', cat:'bot_starts', name:`Premium Старты бота + Активность [🇷🇺 Россия]`, desc:'#3990', price1000:162.305, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_репосты', cat:'other', name:`Premium Репосты`, desc:'#2691', price1000:162.305, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_premium_старты_бота_украина', cat:'bot_starts', name:`Premium Старты бота [🇺🇦 Украина]`, desc:'#3988', price1000:162.305, min:50, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_рандомное_сообщение_англия', cat:'subs_other', name:`🇬🇧 Online Подписчики + Рандомное сообщение [Англия]`, desc:'#4486', price1000:162.305, min:100, max:15000, step:100, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_рандомное_сообщение_израиль', cat:'subs_other', name:`🇮🇱 Online Подписчики + Рандомное сообщение [Израиль]`, desc:'#4487', price1000:162.305, min:100, max:15000, step:100, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_рандомное_сообщение_узбекистан', cat:'subs_uz', name:`🇺🇿 Online Подписчики + Рандомное сообщение [Узбекистан]`, desc:'#4488', price1000:162.305, min:100, max:15000, step:100, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_рандомное_сообщение_китай', cat:'subs_cn', name:`🇨🇳 Online Подписчики + Рандомное сообщение [Китай]`, desc:'#4489', price1000:162.305, min:10, max:15000, step:100, target:'channel' },
+  { id:'telegram_реакции_с_premium_аккаунтов_микс_реакций', cat:'reactions', name:`Микс Реакций [👍❤️🔥😁] с Premium аккаунтов`, desc:'#4474', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_с_premium_аккаунтов_микс_реакций_4475', cat:'reactions', name:`Микс Реакций [👎😱😢💩] с Premium аккаунтов`, desc:'#4475', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_с_premium_аккаунтов_реакция', cat:'reactions', name:`Реакция [👍] с Premium аккаунтов`, desc:'#4476', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_с_premium_аккаунтов_реакция_4477', cat:'reactions', name:`Реакция [👎] с Premium аккаунтов`, desc:'#4477', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_реакции_с_premium_аккаунтов_реакция_4478', cat:'reactions', name:`Реакция [❤️] с Premium аккаунтов`, desc:'#4478', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_50_последних', cat:'views', name:`🇷🇺 Просмотры [50 последних постов]`, desc:'#1698', price1000:162.305, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_premium_просмотры_поста_таргетированные_сша_с_поиска', cat:'views', name:`🇺🇸 Premium Просмотры [США] [С поиска]`, desc:'#2609', price1000:162.305, min:10, max:100000, step:500, target:'post' },
+  { id:'telegram_premium_просмотры_поста_таргетированные_италия_с_поиска', cat:'views', name:`🇮🇹 Premium Просмотры [Италия] [С поиска]`, desc:'#2633', price1000:162.305, min:10, max:100000, step:500, target:'post' },
+  { id:'telegram_premium_просмотры_поста_таргетированные_узбекистан_с_поиска', cat:'views', name:`🇺🇿 Premium Просмотры [Узбекистан] [С поиска]`, desc:'#3141', price1000:162.305, min:10, max:50000, step:500, target:'post' },
+  { id:'telegram_premium_просмотры_поста_таргетированные_китай_с_поиска', cat:'views', name:`🇨🇳 Premium Просмотры [Китай] [С поиска]`, desc:'#3450', price1000:162.305, min:10, max:100000, step:500, target:'post' },
+  { id:'telegram_premium_просмотры_поста_на_пост_с_поиска', cat:'views', name:`Premium Просмотры на пост [С поиска]`, desc:'#3783', price1000:162.305, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_комментарии', cat:'other', name:`Комментарии`, desc:'#4932', price1000:167.2, min:1, max:500, step:10, target:'post' },
+  { id:'telegram_подписчики_россия_реальные_кнопка_отмены_без_гарантии', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Реальные] [Кнопка отмены ✅] [Без гарантии]`, desc:'#2466', price1000:175.285, min:10, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_таргетированные_индия_без_списаний', cat:'subs_other', name:`🇮🇳 Подписчики [Индия] [Без списаний]`, desc:'#2743', price1000:175.285, min:10, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_без_списаний', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Без списаний]`, desc:'#2744', price1000:175.285, min:10, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_гарантия_30_дней', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Гарантия 30 дней ♻️]`, desc:'#4420', price1000:176.33, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_любые_тематики_60_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [Любые тематики] [60 дней без списаний]`, desc:'#2560', price1000:185.031, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_24_7_30_дней_без_списаний', cat:'subs', name:`⭐️ 24/7 Online Подписчики [30 дней без списаний ♻️]`, desc:'#4500', price1000:185.031, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_30', cat:'views', name:`Просмотры [Последние 30 постов]`, desc:'#4737', price1000:194.766, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_30_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 30 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4881', price1000:194.766, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_30_читайте_описание', cat:'views', name:`Просмотры на 30 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4890', price1000:194.766, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_арабские_гарантия_60_дней', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Гарантия 60 дней ♻️]`, desc:'#4421', price1000:196.79, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_гарантия_90_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Гарантия 90 дней ♻️]`, desc:'#5177', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_гарантия_90_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Гарантия 90 дней ♻️]`, desc:'#5182', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_мужчины_гарантия_90_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Мужчины] [Гарантия 90 дней ♻️]`, desc:'#5188', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_женщины_гарантия_90_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Женщины] [Гарантия 90 дней ♻️]`, desc:'#5189', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_мужчины_гарантия_90_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Мужчины] [Гарантия 90 дней ♻️]`, desc:'#5200', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_женщины_гарантия_90_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Женщины] [Гарантия 90 дней ♻️]`, desc:'#5201', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_гарантия_90_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Гарантия 90 дней ♻️]`, desc:'#5212', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_мужчины_гарантия_90_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Мужчины] [Гарантия 90 дней ♻️]`, desc:'#5213', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_женщины_гарантия_90_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Женщины] [Гарантия 90 дней ♻️]`, desc:'#5214', price1000:204.501, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_гарантия_90_дней', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Гарантия 90 дней ♻️]`, desc:'#4422', price1000:204.666, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_гарантия_180_дней', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Гарантия 180 дней ♻️]`, desc:'#4423', price1000:212.542, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_арабские_гарантия_365_дней', cat:'subs_arab', name:`🇦🇪 Подписчики [Арабские] [Гарантия 365 дней ♻️]`, desc:'#4424', price1000:220.407, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_быстрые_гарантия_270_дней', cat:'subs', name:`Подписчики [Быстрые] [Гарантия 270 дней ♻️]`, desc:'#3457', price1000:225.599, min:500, max:500000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [14 дней]`, desc:'#4952', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней_4956', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [14 дней]`, desc:'#4956', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней_5352', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [14 дней]`, desc:'#5352', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней_5360', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [14 дней]`, desc:'#5360', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней_5367', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [14 дней]`, desc:'#5367', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_14_дней_5374', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [14 дней]`, desc:'#5374', price1000:231.286, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_1_7_дней_pre', cat:'subs_premium', name:`Premium Подписчики [1-7 дней Premium]`, desc:'#2667', price1000:241.835, min:1, max:45000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_россия', cat:'subs_premium', name:`Premium Подписчики [🇷🇺 Россия]`, desc:'#4626', price1000:245.96, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_высокое_качество_любые_тематики_90_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [Любые тематики] [90 дней без списаний]`, desc:'#2561', price1000:246.697, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_20_постов', cat:'views', name:`Premium Просмотры [Последние 20 постов]`, desc:'#4728', price1000:272.668, min:10, max:150000, step:500, target:'post' },
+  { id:'telegram_premium_старты_бота', cat:'bot_starts', name:`Premium Старты Бота`, desc:'#2061', price1000:292.149, min:100, max:20000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_7_номера_без_списаний', cat:'subs_ru', name:`🔥⭐️🇷🇺 Подписчики [Россия] [+7 номера] [Без списаний]`, desc:'#3359', price1000:292.149, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_24_7_60_дней_без_списаний', cat:'subs', name:`⭐️ 24/7 Online Подписчики [60 дней без списаний ♻️]`, desc:'#5106', price1000:297.132, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_15_30_дней_p', cat:'subs_premium', name:`Premium Подписчики [15-30 дней Premium]`, desc:'#5026', price1000:308.374, min:500, max:20000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_20_постов_3343', cat:'views', name:`Premium Просмотры [Последние 20 постов]`, desc:'#3343', price1000:308.374, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_гарантия_180_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Гарантия 180 дней ♻️]`, desc:'#5176', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_гарантия_180_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Гарантия 180 дней ♻️]`, desc:'#5192', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_мужчины_гарантия_180_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Мужчины] [Гарантия 180 дней ♻️]`, desc:'#5193', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_женщины_гарантия_180_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Женщины] [Гарантия 180 дней ♻️]`, desc:'#5194', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_мужчины_гарантия_180_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Мужчины] [Гарантия 180 дней ♻️]`, desc:'#5202', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_женщины_гарантия_180_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Женщины] [Гарантия 180 дней ♻️]`, desc:'#5203', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_гарантия_180_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Гарантия 180 дней ♻️]`, desc:'#5215', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_мужчины_гарантия_180_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Мужчины] [Гарантия 180 дней ♻️]`, desc:'#5216', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_женщины_гарантия_180_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Женщины] [Гарантия 180 дней ♻️]`, desc:'#5217', price1000:321.365, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_100_последних', cat:'views', name:`🇷🇺 Просмотры [100 последних постов]`, desc:'#1699', price1000:324.61, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_50', cat:'views', name:`Просмотры [Последние 50 постов]`, desc:'#4735', price1000:324.61, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_50_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 50 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4882', price1000:324.61, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_50_читайте_описание', cat:'views', name:`Просмотры на 50 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4891', price1000:324.61, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_реакции_для_закрытых_каналов_база_2_подписчики_реакций_на_пост_в_закрытом_канале_читайте_описани', cat:'reactions', name:`Подписчики для реакций на пост в закрытом канале [Читайте описание❗️]`, desc:'#4335', price1000:355.3, min:1000, max:3000, step:100, target:'post' },
+  { id:'telegram_подписчики_россия_высокое_качество_любые_тематики_180_дней_без_списаний', cat:'subs_ru', name:`⭐️🇷🇺 Подписчики [Россия] [Высокое качество] [Любые тематики] [180 дней без списаний]`, desc:'#2562', price1000:370.051, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_8_14_дней_pr', cat:'subs_premium', name:`Premium Подписчики [8-14 дней Premium]`, desc:'#4606', price1000:373.296, min:50, max:90000, step:500, target:'channel' },
+  { id:'telegram_подписчики_россия_реальные_ru_аккаунты_гарантия_30_дней', cat:'subs_ru', name:`⭐️ 🇷🇺 Подписчики [Россия] [Реальные RU аккаунты] [Гарантия 30 дней]`, desc:'#2478', price1000:374, min:10, max:500000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_держатся_online_читайте_описание', cat:'subs', name:`Online Подписчики [Читайте описание❗️]`, desc:'#4483', price1000:373.296, min:100, max:5000, step:100, target:'channel' },
+  { id:'telegram_жалобы_на_канал_группу_чат_пост', cat:'other', name:`Жалобы на канал/группу/чат/пост/бота без отчетности`, desc:'#5254', price1000:389.532, min:1, max:50000, step:500, target:'post' },
+  { id:'telegram_подписчики_держатся_online_24_7_90_дней_без_списаний', cat:'subs', name:`⭐️ 24/7 Online Подписчики [90 дней без списаний ♻️]`, desc:'#5107', price1000:396.176, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_таргетирован', cat:'subs_premium', name:`Premium Подписчики [Таргетированные] [🇺🇸 USA / 🇬🇧 UK / 🇨🇳 CN / 🇺🇿 UZB / 🇺🇦 UA / 🇹🇷 TR / 🇮🇱 ISR / 🇮🇹 IT]`, desc:'#5270', price1000:405.757, min:500, max:10000, step:100, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_гарантия_365_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Гарантия 365 дней ♻️]`, desc:'#5183', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_гарантия_365_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Гарантия 365 дней ♻️]`, desc:'#5195', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_мужчины_гарантия_365_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Мужчины] [Гарантия 365 дней ♻️]`, desc:'#5196', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_украина_женщины_гарантия_365_дней', cat:'subs_ua', name:`🇺🇦 Подписчики [Украина] [Женщины] [Гарантия 365 дней ♻️]`, desc:'#5197', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_мужчины_гарантия_365_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Мужчины] [Гарантия 365 дней ♻️]`, desc:'#5204', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_россия_женщины_гарантия_365_дней', cat:'subs_ru', name:`🇷🇺 Подписчики [Россия] [Женщины] [Гарантия 365 дней ♻️]`, desc:'#5205', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_гарантия_365_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Гарантия 365 дней ♻️]`, desc:'#5218', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_мужчины_гарантия_365_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Мужчины] [Гарантия 365 дней ♻️]`, desc:'#5219', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_ru_ua_cn_с_выбором_пола_китай_женщины_гарантия_365_дней', cat:'subs_cn', name:`🇨🇳 Подписчики [Китай] [Женщины] [Гарантия 365 дней ♻️]`, desc:'#5220', price1000:438.218, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [30 дней]`, desc:'#4933', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней_4957', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [30 дней]`, desc:'#4957', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней_5353', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [30 дней]`, desc:'#5353', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней_5361', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [30 дней]`, desc:'#5361', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней_5368', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [30 дней]`, desc:'#5368', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_30_дней_5375', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [30 дней]`, desc:'#5375', price1000:462.561, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_50_постов', cat:'views', name:`Premium Просмотры [Последние 50 постов]`, desc:'#4729', price1000:584.298, min:10, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_держатся_online_24_7_180_дней_без_списаний', cat:'subs', name:`⭐️ 24/7 Online Подписчики [180 дней без списаний ♻️]`, desc:'#5108', price1000:594.264, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_подписчики_личная_свежа', cat:'subs_premium', name:`⭐️ Telegram Premium Подписчики [ЛИЧНАЯ СВЕЖАЯ БАЗА]`, desc:'#3427', price1000:632.984, min:1, max:50000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_50_постов_3344', cat:'views', name:`Premium Просмотры [Последние 50 постов]`, desc:'#3344', price1000:632.984, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_premium_старты_бота_россия', cat:'bot_starts', name:`Premium Старты бота [🇷🇺 Россия]`, desc:'#4007', price1000:649.22, min:100, max:20000, step:500, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_200_последних', cat:'views', name:`🇷🇺 Просмотры [200 последних постов]`, desc:'#1700', price1000:649.22, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_100', cat:'views', name:`Просмотры [Последние 100 постов]`, desc:'#4736', price1000:649.22, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_100_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 100 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4883', price1000:649.22, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_100_читайте_описание', cat:'views', name:`Просмотры на 100 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4892', price1000:649.22, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [60 дней]`, desc:'#4934', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней_4958', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [60 дней]`, desc:'#4958', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней_5354', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [60 дней]`, desc:'#5354', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней_5362', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [60 дней]`, desc:'#5362', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней_5369', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [60 дней]`, desc:'#5369', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_60_дней_5376', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [60 дней]`, desc:'#5376', price1000:770.946, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_старты_бота_через_поиск', cat:'bot_starts', name:`Premium Старты Бота [Через поиск ключевых слов + 🤖 ИИ]`, desc:'#4920', price1000:795.289, min:10, max:500000, step:1000, target:'channel' },
+  { id:'telegram_ии_premium_подписчики', cat:'subs_premium', name:`ИИ Premium Подписчики`, desc:'#4936', price1000:811.514, min:500, max:200000, step:1000, target:'channel' },
+  { id:'telegram_premium_подписчики_31_день_prem', cat:'subs_premium', name:`Premium Подписчики [31+ день Premium]`, desc:'#4937', price1000:939.741, min:500, max:70000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_100_постов', cat:'views', name:`Premium Просмотры [Последние 100 постов]`, desc:'#4730', price1000:1012.781, min:10, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [90 дней]`, desc:'#4935', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней_5348', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [90 дней]`, desc:'#5348', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней_5355', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [90 дней]`, desc:'#5355', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней_5363', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [90 дней]`, desc:'#5363', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней_5370', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [90 дней]`, desc:'#5370', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_90_дней_5377', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [90 дней]`, desc:'#5377', price1000:1079.32, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_premium_просмотры_поста_последние_100_постов_3345', cat:'views', name:`Premium Просмотры [Последние 100 постов]`, desc:'#3345', price1000:1119.899, min:10, max:200000, step:1000, target:'post' },
+  { id:'telegram_подписчики_россия_реальные_ru_аккаунты_100_без_списаний', cat:'subs_ru', name:`⭐️ 🇷🇺 Подписчики [Россия] [Реальные RU аккаунты] [100% без списаний]`, desc:'#2226', price1000:1589.5, min:10, max:500000, step:1000, target:'channel' },
+  { id:'telegram_просмотры_россия_на_несколько_постов_500_последних', cat:'views', name:`🇷🇺 Просмотры [500 последних постов]`, desc:'#1701', price1000:1623.039, min:100, max:100000000, step:1000, target:'post' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_250', cat:'views', name:`Просмотры [Последние 250 постов]`, desc:'#4738', price1000:1623.039, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_250_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 250 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4884', price1000:1623.039, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_250_читайте_описание', cat:'views', name:`Просмотры на 250 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4893', price1000:1623.039, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней', cat:'subs_ru', name:`🇷🇺 Подписчики + Авто Просмотры от подписчиков [Россия] [180 дней]`, desc:'#4953', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней_5349', cat:'subs_kz', name:`🇰🇿 Подписчики + Авто Просмотры от подписчиков [Казахстан] [180 дней]`, desc:'#5349', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней_5356', cat:'subs_cn', name:`🇨🇳 Подписчики + Авто Просмотры от подписчиков [Китай] [180 дней]`, desc:'#5356', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней_5364', cat:'subs_uz', name:`🇺🇿 Подписчики + Авто Просмотры от подписчиков [Узбекистан] [180 дней]`, desc:'#5364', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней_5371', cat:'subs_us', name:`🇺🇸 Подписчики + Авто Просмотры от подписчиков [США] [180 дней]`, desc:'#5371', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_авто_просмотры_россия_казахстан_украина__от_подписчиков_180_дней_5378', cat:'subs_ua', name:`🇺🇦 Подписчики + Авто Просмотры от подписчиков [Украина] [180 дней]`, desc:'#5378', price1000:1850.266, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_рефералы_для_ботов', cat:'bot_starts', name:`Рефералы для Ботов`, desc:'#2224', price1000:1870, min:1, max:300000, step:1000, target:'channel' },
+  { id:'telegram_подписчики_для_продвижения_групп_органические_в_группу_гарантия_30_дней', cat:'subs', name:`Органические Подписчики в группу [Гарантия 30 дней ♻️]`, desc:'#5380', price1000:2191.101, min:1, max:13000, step:100, target:'channel' },
+  { id:'telegram_подписчики_россия_реальные_ru_аккаунты_российские_номера_и_ip_адреса_100_без_с', cat:'subs_ru', name:`⭐️ 🇷🇺 Подписчики [Россия] [Реальные RU аккаунты] [Российские номера и IP-адреса] [100% без списаний]`, desc:'#2227', price1000:2244, min:5, max:95000, step:500, target:'channel' },
+  { id:'telegram_бусты', cat:'boosts', name:`Бусты`, desc:'#4328', price1000:2272.248, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_старты_приложения_mini_app', cat:'bot_starts', name:`Старты приложения mini app`, desc:'#5520', price1000:2409.726, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_для_продвижения_групп_ии_в_группу_с_общением_3_дня', cat:'subs', name:`🤖 ИИ Подписчики в группу с общением 3 дня`, desc:'#4946', price1000:2518.956, min:10, max:6000, step:100, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия', cat:'subs_ru', name:`🇷🇺 Живые Подписчики с рекламы [Россия]`, desc:'#3948', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_снг', cat:'subs_ru', name:`🇷🇺 Живые Подписчики с рекламы [Россия + СНГ]`, desc:'#3949', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_все_страны', cat:'subs', name:`Живые Подписчики с рекламы [Все страны]`, desc:'#3950', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_мужчины', cat:'subs_ru', name:`🇷🇺 👦🏻 Живые Подписчики с рекламы [Россия] [Мужчины]`, desc:'#3951', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_снг_мужчины', cat:'subs_ru', name:`🇷🇺 👦🏻 Живые Подписчики с рекламы [Россия + СНГ] [Мужчины]`, desc:'#3952', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_все_страны_мужчины', cat:'subs', name:`👦🏻 Живые Подписчики с рекламы [Все страны] [Мужчины]`, desc:'#3953', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_женщины', cat:'subs_ru', name:`🇷🇺 👩🏻 Живые Подписчики с рекламы [Россия] [Женщины]`, desc:'#3954', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_снг_женщины', cat:'subs_ru', name:`🇷🇺 👩🏻 Живые Подписчики с рекламы [Россия + СНГ] [Женщины]`, desc:'#3955', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_живые_с_рекламы_россия_женщины_3956', cat:'subs', name:`👩🏻 Живые Подписчики с рекламы [Россия] [Женщины]`, desc:'#3956', price1000:3179, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_просмотры_на_несколько_постов_последние_500', cat:'views', name:`Просмотры [Последние 500 постов]`, desc:'#4739', price1000:3246.078, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_500_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 500 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4885', price1000:3246.078, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_500_читайте_описание', cat:'views', name:`Просмотры на 500 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4894', price1000:3246.078, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_для_продвижения_групп_ии_в_группу_с_общением_7_дней', cat:'subs', name:`🤖 ИИ Подписчики в группу с общением 7 дней`, desc:'#4947', price1000:5037.912, min:10, max:6000, step:100, target:'channel' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_будущие_посты_1000_будущих_постов_читайте_описание', cat:'views', name:`Просмотры на 1000 будущих постов [Для закрытых каналов] [Читайте описание]`, desc:'#4886', price1000:6492.156, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_просмотры_для_закрытых_каналов_на_несколько_последн_1000_читайте_описание', cat:'views', name:`Просмотры на 1000 последних постов [Для закрытых каналов] [Читайте описание]`, desc:'#4895', price1000:6492.156, min:1, max:150000, step:500, target:'post' },
+  { id:'telegram_подписчики_для_продвижения_групп_ии_в_группу_с_общением_15_дней', cat:'subs', name:`🤖 ИИ Подписчики в группу с общением 15 дней`, desc:'#4948', price1000:11218.438, min:10, max:6000, step:100, target:'channel' },
+  { id:'telegram_premium_подписчики_живые_с_рекл', cat:'subs_premium', name:`Premium Подписчики [👨 Живые с рекламы]`, desc:'#4140', price1000:19074, min:10, max:100000, step:500, target:'channel' },
+  { id:'telegram_подписчики_для_продвижения_групп_ии_в_группу_с_общением_30_дней', cat:'subs', name:`🤖 ИИ Подписчики в группу с общением 30 дней`, desc:'#4949', price1000:20677.503, min:10, max:6000, step:100, target:'channel' },
+  { id:'telegram_подарки', cat:'other', name:`Подарки`, desc:'#3772', price1000:67021.922, min:1, max:250, step:10, target:'post' },
+];
+const CATS_TELEGRAM = [
+  { id:'subs', label:'Подписчики' }, // 51 услуг
+  { id:'subs_ru', label:'🇷🇺 Подписчики RU' }, // 42 услуг
+  { id:'subs_ua', label:'🇺🇦 Подписчики UA' }, // 28 услуг
+  { id:'subs_cn', label:'🇨🇳 Подписчики CN' }, // 24 услуг
+  { id:'subs_uz', label:'🇺🇿 Подписчики UZ' }, // 9 услуг
+  { id:'subs_us', label:'🇺🇸 Подписчики US' }, // 9 услуг
+  { id:'subs_kz', label:'🇰🇿 Подписчики KZ' }, // 7 услуг
+  { id:'subs_arab', label:'🇦🇪 Подписчики (Арабские)' }, // 7 услуг
+  { id:'subs_other', label:'Подписчики (др. страны)' }, // 6 услуг
+  { id:'subs_premium', label:'⭐️ Premium Подписчики' }, // 9 услуг
+  { id:'views', label:'Просмотры' }, // 143 услуг
+  { id:'reactions', label:'Реакции' }, // 147 услуг
+  { id:'boosts', label:'Бусты' }, // 1 услуг
+  { id:'bot_starts', label:'Старты бота' }, // 17 услуг
+  { id:'other', label:'Другое' }, // 8 услуг
+];
+
+/* ---------- Каталог TikTok ----------
+   Генерируется скриптом fetch-twiboost-services.js (см. рядом с этим файлом):
+     node fetch-twiboost-services.js tiktok
+   Скрипт сам подставит содержимое TIKTOK_SERVICES и CATS_TIKTOK ниже —
+   просто замените эти два объявления целиком тем, что он выведет
+   в tiktok-services-client.js. Формат строк — 1 в 1 как у Telegram выше,
+   только target — 'video' (ссылка на видео) или 'profile' (ссылка/юзернейм
+   профиля), см. LINK_FIELD_CONFIG. Наценка +10% уже применена скриптом. */
+const TIKTOK_SERVICES = [
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_всегда_стабильна_без_гарантии', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Всегда стабильна] [Без гарантии]`, desc:'#850', price1000:43.907, min:10, max:150000, step:10, target:'video' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_всегда_стабильна_без_гарантии_851', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Всегда стабильна] [Без гарантии]`, desc:'#851', price1000:35.776, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_гарантия_30_дней', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Гарантия 30 дней ♻️]`, desc:'#852', price1000:24.393, min:10, max:20000, step:10, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_моментальные_гарантия_30_дней', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Моментальные] [Гарантия 30 дней ♻️]`, desc:'#1002', price1000:6.83, min:100, max:2147483647, step:100, target:'video' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_15_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [15 минут]`, desc:'#1018', price1000:116.271, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_30_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [30 минут]`, desc:'#1019', price1000:232.542, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_60_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [60 минут]`, desc:'#1020', price1000:465.085, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_90_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [90 минут]`, desc:'#1021', price1000:697.627, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_120_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [120 минут]`, desc:'#1022', price1000:930.169, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_180_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [180 минут]`, desc:'#1023', price1000:1395.254, min:10, max:50000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_стрима_tiktok_просмотры_на_стрим_240_минут', cat:'tiktok_tiktok_просмотры_стрима', name:`TikTok Просмотры на Стрим [240 минут]`, desc:'#1024', price1000:1014.73, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_сохранения_репосты_скачивания_tiktok_сохранения_видео_быстрые_гарантия_30_дней', cat:'tiktok_tiktok_сохранения_репосты_скачивания', name:`TikTok Сохранения видео [Быстрые] [Гарантия 30 дней ♻️]`, desc:'#1234', price1000:15.305, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_сохранения_репосты_скачивания_tiktok_репосты_быстрые', cat:'tiktok_tiktok_сохранения_репосты_скачивания', name:`TikTok Репосты [Быстрые]`, desc:'#1235', price1000:9.566, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_моментальные_гарантия_30_дней_1493', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Моментальные] [Гарантия 30 дней ♻️]`, desc:'#1493', price1000:5.759, min:100, max:217545811, step:100, target:'video' },
+  { id:'tiktok_tiktok_органические_подписчики_tiktok_органические_подписчики_до_5к_сутки', cat:'tiktok_tiktok_органические_подписчики', name:`TikTok Органические Подписчики [до 5к/сутки]`, desc:'#2393', price1000:642.337, min:10, max:20000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_сша_микс_быстрые_без_гарантии', cat:'tiktok_tiktok_лайки', name:`🇺🇸 TikTok Лайки [США + микс] [Быстрые] [Без гарантии]`, desc:'#2619', price1000:25.827, min:10, max:50000, step:10, target:'video' },
+  { id:'tiktok_tiktok_баттл_поинты_tiktok_баттл_поинты_быстрые', cat:'tiktok_tiktok_баттл_поинты', name:`TikTok Баттл поинты [Быстрые]`, desc:'#2708', price1000:22.766, min:100, max:30000, step:100, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_кастомные_комментарии_моментальные_без_гарантии', cat:'tiktok_tiktok_комментарии', name:`TikTok Кастомные Комментарии [Моментальные] [Без гарантии]`, desc:'#3353', price1000:428.544, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_средняя_скорость_до_5к_сутки_без_гарантии', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Средняя скорость] [до 5к/сутки] [Без гарантии]`, desc:'#3368', price1000:178.879, min:10, max:100000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_подписчики_снг_микс_живые', cat:'tiktok_tiktok_россия_снг', name:`TikTok Подписчики [СНГ + Микс] [Живые]`, desc:'#3372', price1000:1585.76, min:5, max:10000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_подписчики_россия_живые', cat:'tiktok_tiktok_россия_снг', name:`🇷🇺 TikTok Подписчики [Россия] [Живые]`, desc:'#3373', price1000:729.227, min:5, max:20000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_быстрые_гарантия_90_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Быстрые] [Гарантия 90 дней ♻️]`, desc:'#3415', price1000:420.891, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_высокое_качество_гарантия_30_дней', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Высокое качество] [Гарантия 30 дней ♻️]`, desc:'#4009', price1000:44.002, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_быстрые_без_гарантии', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Быстрые] [Без гарантии]`, desc:'#4010', price1000:2.342, min:100, max:10000000, step:100, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_старые_аккаунты_до_100к_сутки_низкие_списания_гарантия_30_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Старые аккаунты] [до 100к/сутки] [Низкие списания] [Гарантия 30 дней ♻️]`, desc:'#4012', price1000:439.066, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_сша_микс_быстрые_гарантия_365_дней', cat:'tiktok_tiktok_лайки', name:`🇺🇸 TikTok Лайки [США + микс] [Быстрые] [Гарантия 365 дней ♻️]`, desc:'#4013', price1000:39.028, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_до_1к_час_без_гарантии', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [до 1к/час] [Без гарантии]`, desc:'#4019', price1000:246.795, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_просмотры_гарантия_30_дней', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки + Просмотры [Гарантия 30 дней ♻️]`, desc:'#4021', price1000:34.702, min:10, max:1000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_просмотры_50_3к_сутки', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки + Просмотры (50%) [3к/ сутки]`, desc:'#4022', price1000:54.444, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_просмотры_50_5к_сутки', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки + Просмотры (50%) [5к/ сутки]`, desc:'#4023', price1000:108.888, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_просмотры_50_10к_сутки', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки + Просмотры (50%) [10к/ сутки]`, desc:'#4024', price1000:124.012, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_просмотры_50_15к_сутки', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки + Просмотры (50%) [15к/ сутки]`, desc:'#4025', price1000:145.184, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_30к_сутки_рефилл_30_дней', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки [30к/ сутки] [Рефилл 30 дней ♻️]`, desc:'#4026', price1000:58.981, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_органические_лайки_tiktok_органические_лайки_просмотры_15к_сутки_рефилл_30_дней', cat:'tiktok_tiktok_органические_лайки', name:`TikTok Органические Лайки + Просмотры [15к/ сутки] [Рефилл 30 дней ♻️]`, desc:'#4027', price1000:279.782, min:10, max:1000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_быстрые_до_10к_сутки_без_гарантии', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Быстрые] [до 10к/сутки] [Без гарантии]`, desc:'#4092', price1000:239.143, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_сша_быстрые_без_гарантии', cat:'tiktok_tiktok_подписчики', name:`🇺🇸 TikTok Подписчики [США] [Быстрые] [Без гарантии]`, desc:'#4113', price1000:390.281, min:10, max:10000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_быстрые_высокое_качество_до_3к_сутки_гарантия_30_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Быстрые] [Высокое качество] [до 3к/сутки] [Гарантия 30 дней ♻️]`, desc:'#4189', price1000:254.83, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_рандомные_комментарии_россия_микс', cat:'tiktok_tiktok_россия_снг', name:`TikTok Рандомные Комментарии [Россия+Микс]`, desc:'#4249', price1000:766.7, min:10, max:10000, step:10, target:'video' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_рандомные_комментарии_эмоджи_россия', cat:'tiktok_tiktok_россия_снг', name:`TikTok Рандомные Комментарии + Эмоджи [Россия]`, desc:'#4250', price1000:729.3, min:10, max:10000, step:10, target:'video' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_рандомные_комментарии_снг_быстрые', cat:'tiktok_tiktok_россия_снг', name:`TikTok Рандомные Комментарии [СНГ] [Быстрые]`, desc:'#4253', price1000:935, min:10, max:3000, step:10, target:'video' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_кастомные_комментарии_снг_реальные', cat:'tiktok_tiktok_россия_снг', name:`TikTok Кастомные Комментарии [СНГ] [Реальные]`, desc:'#4254', price1000:987.36, min:5, max:1000, step:10, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_реальные_до_50к_сутки_гарантия_15_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Реальные] [до 50к/сутки] [Гарантия 15 дней ♻️]`, desc:'#4287', price1000:268.318, min:10, max:100000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_россия_снг_tiktok_лайки_россия_снг_до_500_сутки_гарантия_30_дней', cat:'tiktok_tiktok_россия_снг', name:`TikTok Лайки [Россия + СНГ] [до 500/сутки] [Гарантия 30 дней ♻️]`, desc:'#4288', price1000:524.449, min:10, max:20000, step:10, target:'video' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_гарантия_365_дней', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Гарантия 365 дней ♻️]`, desc:'#4301', price1000:45.915, min:50, max:200000, step:50, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_быстрые_гарантия_365_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Быстрые] [Гарантия 365 дней ♻️]`, desc:'#4307', price1000:669.599, min:10, max:500000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_быстрые_гарантия_365_дней', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Быстрые] [Гарантия 365 дней ♻️]`, desc:'#4358', price1000:3.903, min:100, max:2147483647, step:100, target:'video' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_англия_высокое_качество_быстрые_гарантия_30_дней', cat:'tiktok_tiktok_лайки', name:`🏴󠁧󠁢󠁥󠁮󠁧󠁿 TikTok Лайки [Англия] [Высокое качество] [Быстрые] [Гарантия 30 дней ♻️]`, desc:'#4359', price1000:204.897, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_кастомные_комментарии_офферы_высокое_качество', cat:'tiktok_tiktok_комментарии', name:`TikTok Кастомные Комментарии [Офферы] [Высокое качество]`, desc:'#4412', price1000:4449.981, min:5, max:1000, step:10, target:'video' },
+  { id:'tiktok_tiktok_сохранения_репосты_скачивания_tiktok_сохранения_видео_быстрые', cat:'tiktok_tiktok_сохранения_репосты_скачивания', name:`TikTok Сохранения видео [Быстрые]`, desc:'#4416', price1000:9.35, min:10, max:10000000, step:10, target:'video' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_гарантия_365_дней_4444', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Гарантия 365 дней ♻️]`, desc:'#4444', price1000:26.019, min:10, max:50000, step:10, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_кастомные_комментарии_на_английском_языке_быстрые_высокое_качество_без_гарантии', cat:'tiktok_tiktok_комментарии', name:`TikTok Кастомные Комментарии на Английском языке [Быстрые] [Высокое качество] [Без гарантии]`, desc:'#4660', price1000:731.776, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_рандомные_комментарии_быстрые_без_гарантии', cat:'tiktok_tiktok_комментарии', name:`TikTok Рандомные Комментарии [Быстрые] [Без гарантии]`, desc:'#4661', price1000:342.452, min:10, max:10000, step:10, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_эмодзи_комментарии_быстрые_без_гарантии', cat:'tiktok_tiktok_комментарии', name:`TikTok Эмодзи Комментарии [Быстрые] [Без гарантии]`, desc:'#4712', price1000:378.802, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_комментарии_tiktok_эмодзи_комментарии_быстрые_высокое_качество_без_гарантии', cat:'tiktok_tiktok_комментарии', name:`TikTok Эмодзи Комментарии [Быстрые] [Высокое качество] [Без гарантии]`, desc:'#4714', price1000:813.085, min:10, max:100000, step:10, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_быстрые_без_гарантии_4715', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Быстрые] [Без гарантии]`, desc:'#4715', price1000:0.612, min:100, max:10000000, step:100, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_быстрые_до_50к_сутки_гарантия_30_дней', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Быстрые] [до 50к/сутки] [Гарантия 30 дней ♻️]`, desc:'#4754', price1000:317.103, min:10, max:100000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_без_гарантии', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Без гарантии]`, desc:'#4776', price1000:29.271, min:50, max:100000, step:50, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_моментальные_без_гарантии', cat:'tiktok_tiktok_просмотры', name:`TikTok Просмотры [Моментальные] [Без гарантии]`, desc:'#4985', price1000:1.435, min:100, max:10000000, step:100, target:'video' },
+  { id:'tiktok_tiktok_просмотры_tiktok_просмотры_моментальные_гарантия_30_дней_4986', cat:'tiktok_tiktok_просмотры', name:`🚀 TikTok Просмотры [Моментальные] [Гарантия 30 дней ♻️]`, desc:'#4986', price1000:8.196, min:100, max:217545811, step:100, target:'video' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_сша_быстрые_без_гарантии_5019', cat:'tiktok_tiktok_подписчики', name:`🇺🇸 TikTok Подписчики [США] [Быстрые] [Без гарантии]`, desc:'#5019', price1000:374.019, min:10, max:1000000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_15_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [15 минут] 🚀`, desc:'#5167', price1000:406.542, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_30_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [30 минут] 🚀`, desc:'#5168', price1000:813.085, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_60_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [60 минут] 🚀`, desc:'#5169', price1000:1626.17, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_90_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [90 минут] 🚀`, desc:'#5170', price1000:2439.255, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_120_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [120 минут] 🚀`, desc:'#5171', price1000:3252.34, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_180_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [180 минут] 🚀`, desc:'#5172', price1000:4878.509, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_240_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [240 минут] 🚀`, desc:'#5173', price1000:6504.679, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_300_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [300 минут] 🚀`, desc:'#5174', price1000:8130.849, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_зрители_всегда_стабильны_tiktok_зрители_360_минут', cat:'tiktok_tiktok_зрители_всегда_стабильны', name:`TikTok Зрители [360 минут] 🚀`, desc:'#5175', price1000:9757.019, min:50, max:50000, step:50, target:'profile' },
+  { id:'tiktok_tiktok_подписчики_tiktok_подписчики_стабильные_до_50к_сутки_без_гарантии', cat:'tiktok_tiktok_подписчики', name:`TikTok Подписчики [Стабильные] [до 50к/сутки] [Без гарантии]`, desc:'#5299', price1000:295.963, min:10, max:25000, step:10, target:'profile' },
+  { id:'tiktok_tiktok_лайки_на_прямой_эфир_tiktok_лайки_на_прямой_эфир', cat:'tiktok_tiktok_лайки_на_прямой_эфир', name:`TikTok Лайки на Прямой Эфир`, desc:'#5329', price1000:2.927, min:100, max:200000000, step:100, target:'profile' },
+  { id:'tiktok_tiktok_лайки_tiktok_лайки_быстрые_без_гарантии_5379', cat:'tiktok_tiktok_лайки', name:`TikTok Лайки [Быстрые] [Без гарантии]`, desc:'#5379', price1000:17.218, min:50, max:100000, step:50, target:'video' },
+];
+const CATS_TIKTOK = [
+  { id:'tiktok_tiktok_лайки', label:'TikTok Лайки' }, // 12 услуг
+  { id:'tiktok_tiktok_просмотры', label:'TikTok Просмотры' }, // 7 услуг
+  { id:'tiktok_tiktok_просмотры_стрима', label:'TikTok Просмотры стрима' }, // 7 услуг
+  { id:'tiktok_tiktok_сохранения_репосты_скачивания', label:'TikTok Сохранения / Репосты / Скачивания' }, // 3 услуг
+  { id:'tiktok_tiktok_органические_подписчики', label:'TikTok Органические Подписчики' }, // 1 услуг
+  { id:'tiktok_tiktok_баттл_поинты', label:'TikTok Баттл поинты' }, // 1 услуг
+  { id:'tiktok_tiktok_комментарии', label:'TikTok Комментарии' }, // 6 услуг
+  { id:'tiktok_tiktok_подписчики', label:'TikTok Подписчики' }, // 12 услуг
+  { id:'tiktok_tiktok_россия_снг', label:'TikTok - 🇷🇺 Россия / СНГ' }, // 7 услуг
+  { id:'tiktok_tiktok_органические_лайки', label:'TikTok Органические Лайки' }, // 6 услуг
+  { id:'tiktok_tiktok_зрители_всегда_стабильны', label:'TikTok Зрители [Всегда стабильны]' }, // 9 услуг
+  { id:'tiktok_tiktok_лайки_на_прямой_эфир', label:'TikTok Лайки на Прямой Эфир' }, // 1 услуг
+];
+
+/* ---------- Сети (СММ-разделы), переключаются нижней панелью ---------- */
+const NETWORKS = [
+  { id:'telegram', label:'Telegram', icon:'📨', subtitle:'Продвижение в Telegram — оплата в Telegram Stars' },
+  { id:'tiktok',   label:'TikTok',   icon:'🎵', subtitle:'Продвижение в TikTok — оплата в Telegram Stars' },
+];
+const CATS_BY_NETWORK = { telegram: CATS_TELEGRAM, tiktok: CATS_TIKTOK };
+const SERVICES = [
+  ...TELEGRAM_SERVICES.map(s => ({ ...s, net: 'telegram' })),
+  ...TIKTOK_SERVICES.map(s => ({ ...s, net: 'tiktok' })),
+];
+
+/* Подписи и плейсхолдер поля "ссылка" в форме заказа — по target услуги. */
+const LINK_FIELD_CONFIG = {
+  post:    { label: 'Ссылка на пост',                    placeholder: 'https://t.me/channel/123' },
+  channel: { label: 'Ссылка на канал (или @username)',   placeholder: '@my_channel' },
+  video:   { label: 'Ссылка на видео',                   placeholder: 'https://www.tiktok.com/@user/video/1234567890' },
+  profile: { label: 'Ссылка на профиль (или @username)', placeholder: '@my_tiktok' },
+};
+function linkFieldFor(target){
+  return LINK_FIELD_CONFIG[target] || LINK_FIELD_CONFIG.channel;
+}
+
+/* Демо-промокод для фронтенда без бэкенда (когда бэкенд недоступен —
+   см. applyPromo ниже). На проде проверка и начисление ВСЕГДА идут на
+   сервере (см. /api/redeem-promo в server.js) — иначе любой человек
+   откроет консоль браузера и начислит себе баланс. */
+const BALANCE_PROMO_CODES = {
+  'WAVEFLAIR': { value: 20, maxUses: 10, label: 'Промокод WAVEFLAIR — +20 ⭐ на баланс' },
+};
+
+let activeNetwork = 'telegram';
+let activeCat = CATS_BY_NETWORK[activeNetwork][0]?.id || null;
+let searchQuery = '';
+let sortMode = 'default';
+let cart = []; // {cartId, serviceId, name, qty, link, price}
+let openRowId = null;
+const draft = {}; // serviceId -> {qty, link}
+
+let balance = 0;
+let useBalance = false;
+let orders = []; // история заказов
+
+// Показываем цену с точностью до сотых звезды (а не округляем до целой) —
+// иначе при недорогих услугах (например 0.22 ⭐ за 1000) в интерфейсе
+// показывалась цена "1 ⭐" вместо реальной, и остаток "терялся" уже на
+// этапе отображения, до всякой оплаты.
+const fmt = n => {
+  const r = Math.round((n + Number.EPSILON) * 100) / 100;
+  return r.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+};
+// Точная цена позиции, без округления до целой звезды и без принудительного
+// минимума в 1 ⭐ за позицию. Итоговая сумма к оплате округляется до целой
+// звезды только один раз, в самом конце (см. computeTotals) — так, как это
+// реально произойдёт на сервере при выставлении инвойса Stars.
+const priceFor = (svc, qty) => qty/1000*svc.price1000;
+
+function chipsFor(svc){
+  const base = svc.step;
+  const raw = [base, base*5, base*20, svc.max];
+  const seen = new Set(); const out = [];
+  raw.forEach(v=>{ v = Math.min(v, svc.max); if(!seen.has(v)){ seen.add(v); out.push(v); } });
+  return out;
+}
+
+/* ---------- Витрина ---------- */
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  const cats = CATS_BY_NETWORK[activeNetwork] || [];
+  cats.forEach(c=>{
+    const b = document.createElement('div');
+    b.className = 'tab' + (c.id===activeCat ? ' active' : '');
+    b.textContent = c.label;
+    b.onclick = ()=>{ activeCat = c.id; openRowId = null; clearSearch(false); renderTabs(); renderGroups(); };
+    el.appendChild(b);
+  });
+  if(cats.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.style.padding = '4px';
+    empty.textContent = 'Каталог для этого раздела ещё не загружен.';
+    el.appendChild(empty);
+  }
+}
+
+/* ---------- Нижняя панель: переключение между СММ (Telegram / TikTok / ...) ---------- */
+function renderNetworkNav(){
+  const el = document.getElementById('networkNav');
+  if(!el) return;
+  el.innerHTML = '';
+  NETWORKS.forEach(n=>{
+    const b = document.createElement('div');
+    b.className = 'net-btn' + (n.id===activeNetwork ? ' active' : '');
+    b.innerHTML = `<span class="net-icon">${n.icon}</span><span class="net-label">${n.label}</span>`;
+    b.onclick = ()=>{
+      if(activeNetwork === n.id) return;
+      activeNetwork = n.id;
+      activeCat = (CATS_BY_NETWORK[activeNetwork] || [])[0]?.id || null;
+      openRowId = null;
+      clearSearch(false);
+      const subtitleEl = document.querySelector('#shopScreen .subtitle');
+      if(subtitleEl) subtitleEl.textContent = n.subtitle;
+      renderNetworkNav();
+      renderTabs();
+      renderGroups();
+    };
+    el.appendChild(b);
+  });
+}
+
+/* ---------- Поиск и сортировка ---------- */
+function onSearchInput(value){
+  searchQuery = value;
+  document.getElementById('searchClearBtn').style.display = value ? 'flex' : 'none';
+  openRowId = null;
+  renderGroups();
+}
+function clearSearch(rerender){
+  searchQuery = '';
+  const input = document.getElementById('searchInput');
+  if(input) input.value = '';
+  const clearBtn = document.getElementById('searchClearBtn');
+  if(clearBtn) clearBtn.style.display = 'none';
+  if(rerender !== false) renderGroups();
+}
+function onSortChange(value){
+  sortMode = value;
+  renderGroups();
+}
+function sortServices(list){
+  const arr = list.slice();
+  switch(sortMode){
+    case 'price_asc':  arr.sort((a,b)=>a.price1000 - b.price1000); break;
+    case 'price_desc': arr.sort((a,b)=>b.price1000 - a.price1000); break;
+    case 'name_asc':   arr.sort((a,b)=>a.name.localeCompare(b.name, 'ru')); break;
+    case 'name_desc':  arr.sort((a,b)=>b.name.localeCompare(a.name, 'ru')); break;
+  }
+  return arr;
+}
+function getVisibleServices(){
+  const q = searchQuery.trim().toLowerCase();
+  if(q){
+    // Поиск ищет по всем категориям текущей сети сразу — так проще найти
+    // услугу, не гадая с вкладкой (но не мешает результаты Telegram и TikTok).
+    return SERVICES.filter(s => s.net === activeNetwork && s.name.toLowerCase().includes(q));
+  }
+  return SERVICES.filter(s => s.net === activeNetwork && s.cat === activeCat);
+}
+
+function renderGroups(){
+  const el = document.getElementById('groups');
+  const infoEl = document.getElementById('searchInfo');
+  el.innerHTML = '';
+  const isSearching = searchQuery.trim().length > 0;
+  const visible = sortServices(getVisibleServices());
+
+  if(isSearching){
+    infoEl.style.display = 'block';
+    infoEl.textContent = visible.length
+      ? `Найдено по всем категориям: ${visible.length}`
+      : `Ничего не найдено по запросу «${searchQuery.trim()}»`;
+  } else {
+    infoEl.style.display = 'none';
+  }
+
+  if(visible.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'Ничего не найдено. Попробуйте другой запрос.';
+    el.appendChild(empty);
+    return;
+  }
+
+  const group = document.createElement('div');
+  group.className = 'group';
+  visible.forEach(svc=>{
+    if(!draft[svc.id]) draft[svc.id] = { qty: svc.step, link: '' };
+    const row = document.createElement('div');
+    row.className = 'row' + (openRowId===svc.id ? ' open' : '');
+    const linkField = linkFieldFor(svc.target);
+    const linkLabel = linkField.label;
+    const linkPlaceholder = linkField.placeholder;
+    row.innerHTML = `
+      <div class="row-top" data-toggle>
+        <div>
+          <div class="row-name">${svc.name}</div>
+          <div class="row-desc">${svc.desc}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="row-price">от <b class="star">${svc.price1000}</b> ⭐/1000</div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+      <div class="row-form">
+        <div class="row-form-inner">
+          <div class="field-label">Количество (до ${fmt(svc.max)})</div>
+          <div class="qty-control">
+            <div class="qty-btn" data-dec>−</div>
+            <input class="qty-input" type="number" inputmode="numeric" value="${draft[svc.id].qty}" data-qty>
+            <div class="qty-btn" data-inc>+</div>
+          </div>
+          <div class="chips" data-chips></div>
+          <div class="field-label">${linkLabel} *</div>
+          <input class="link-input" type="text" placeholder="${linkPlaceholder}" value="${draft[svc.id].link}" data-link>
+          <div class="link-hint">Обязательное поле — без ссылки заказ не будет добавлен в корзину</div>
+          <div class="form-footer">
+            <div class="form-total">Итого: <span class="star" data-total></span> ⭐</div>
+            <button class="add-btn" data-add>Добавить</button>
+          </div>
+        </div>
+      </div>
+    `;
+    group.appendChild(row);
+
+    const qtyInput = row.querySelector('[data-qty]');
+    const totalEl = row.querySelector('[data-total]');
+    const chipsEl = row.querySelector('[data-chips]');
+    const linkInput = row.querySelector('[data-link]');
+
+    // clamp — раньше округляла ЛЮБОЕ введённое число до ближайшего кратного
+    // шага (svc.step), из-за чего вручную ввести точное количество было
+    // невозможно. Теперь просто ограничивает диапазоном [min, max] — шаг
+    // используется только для кнопок +/− ниже.
+    function clamp(v){ return Math.min(svc.max, Math.max(svc.min, v||svc.min)); }
+    function refresh(){
+      const q = clamp(parseInt(qtyInput.value)||svc.min);
+      qtyInput.value = q;
+      draft[svc.id].qty = q;
+      totalEl.textContent = fmt(priceFor(svc, q));
+      chipsEl.querySelectorAll('.chip').forEach(c=>{
+        c.classList.toggle('active', parseInt(c.dataset.v)===q);
+      });
+    }
+    chipsFor(svc).forEach(v=>{
+      const chip = document.createElement('div');
+      chip.className = 'chip'; chip.dataset.v = v; chip.textContent = fmt(v);
+      chip.onclick = (e)=>{ e.stopPropagation(); qtyInput.value=v; refresh(); };
+      chipsEl.appendChild(chip);
+    });
+    refresh();
+
+    row.querySelector('[data-toggle]').onclick = ()=>{
+      openRowId = (openRowId===svc.id) ? null : svc.id;
+      renderGroups();
+    };
+    row.querySelector('[data-dec]').onclick = (e)=>{ e.stopPropagation(); qtyInput.value = clamp(draft[svc.id].qty - svc.step); refresh(); };
+    row.querySelector('[data-inc]').onclick = (e)=>{ e.stopPropagation(); qtyInput.value = clamp(draft[svc.id].qty + svc.step); refresh(); };
+    qtyInput.onclick = e=>e.stopPropagation();
+    qtyInput.onchange = refresh;
+    linkInput.onclick = e=>e.stopPropagation();
+    linkInput.oninput = ()=>{ draft[svc.id].link = linkInput.value; linkInput.classList.remove('link-required'); };
+
+    row.querySelector('[data-add]').onclick = (e)=>{
+      e.stopPropagation();
+      const q = draft[svc.id].qty;
+      const link = linkInput.value.trim();
+      if(!link){ linkInput.focus(); linkInput.classList.add('link-required'); return; }
+      cart.push({ cartId: Date.now()+Math.random(), serviceId: svc.id, name: svc.name, qty: q, link, price: priceFor(svc,q) });
+      const btn = e.currentTarget;
+      btn.textContent = 'Добавлено ✓'; btn.classList.add('added');
+      setTimeout(()=>{ btn.textContent='Добавить'; btn.classList.remove('added'); }, 900);
+      renderCart();
+    };
+  });
+  el.appendChild(group);
+}
+
+/* ---------- Расчёт итогов (баланс) ---------- */
+function computeTotals(){
+  const subtotal = cart.reduce((s,i)=>s+i.price,0);
+  const balanceUsed = useBalance ? Math.min(balance, subtotal) : 0;
+  const final = Math.max(0, subtotal - balanceUsed);
+  // Stars можно списать только целым числом — если после баланса
+  // остаётся дробная сумма, реально с покупателя спишется final, округлённый
+  // ВВЕРХ до целой звезды, а разница (roundingCredit) сразу вернётся ему на
+  // баланс (см. server.js). Здесь считаем то же самое для честного превью.
+  const starsToCharge = final > 0 ? Math.max(1, Math.ceil(final - 1e-9)) : 0;
+  const roundingCredit = final > 0 ? Math.round((starsToCharge - final + Number.EPSILON) * 100) / 100 : 0;
+  return { subtotal, balanceUsed, final, starsToCharge, roundingCredit };
+}
+
+function renderCart(){
+  const itemsEl = document.getElementById('cartItems');
+  const summaryEl = document.getElementById('cartSummary');
+  const bbCount = document.getElementById('bbCount');
+  const bbTotal = document.getElementById('bbTotal');
+  const bottomBar = document.getElementById('bottomBar');
+  const payBtn = document.getElementById('payBtn');
+
+  if(cart.length===0){
+    itemsEl.innerHTML = '<div class="cart-empty">Пока пусто — выберите услугу выше</div>';
+  } else {
+    itemsEl.innerHTML = cart.map(item=>`
+      <div class="cart-item">
+        <div>
+          <div class="ci-name">${item.name}</div>
+          <div class="ci-meta">${fmt(item.qty)} шт · ${item.link}</div>
+        </div>
+        <div class="ci-right">
+          <div class="ci-price">${fmt(item.price)} ⭐</div>
+          <button class="ci-remove" data-remove="${item.cartId}">×</button>
+        </div>
+      </div>
+    `).join('');
+    itemsEl.querySelectorAll('[data-remove]').forEach(btn=>{
+      btn.onclick = ()=>{ cart = cart.filter(i=>String(i.cartId)!==btn.dataset.remove); renderCart(); };
+    });
+  }
+
+  const t = computeTotals();
+  let summaryHtml = '';
+  if(cart.length){
+    if(t.balanceUsed>0) summaryHtml += `<div class="sum-line"><span>Списание баланса</span><span>−${fmt(t.balanceUsed)} ⭐</span></div>`;
+    summaryHtml += `<div class="sum-line total"><span>Итого</span><span>${fmt(t.final)} ⭐</span></div>`;
+    // Stars списываются только целым числом — если после баланса
+    // осталась дробная сумма, показываем честно, сколько реально спишет
+    // Telegram, и что излишек вернётся на баланс (см. computeTotals).
+    if(t.roundingCredit>0) summaryHtml += `<div class="sum-line"><span>К списанию Stars (округление вверх, излишек ${fmt(t.roundingCredit)} ⭐ вернётся на баланс)</span><span>${fmt(t.starsToCharge)} ⭐</span></div>`;
+  }
+  summaryEl.innerHTML = summaryHtml;
+
+  bbCount.textContent = cart.length ? `Корзина · ${cart.length} ${plural(cart.length)}` : 'Корзина пуста';
+  bbTotal.innerHTML = t.final || (cart.length && t.final===0) ? `<span class="star">${fmt(t.final)}</span> ⭐` : '';
+  payBtn.disabled = cart.length===0;
+
+  const cartBadge = document.getElementById('cartBadge');
+  cartBadge.textContent = cart.length;
+  cartBadge.classList.toggle('show', cart.length>0);
+
+  if(inTelegram && tg){
+    if(cart.length){
+      tg.MainButton.setParams({ color: '#2AABEE', text_color: '#ffffff' });
+      tg.MainButton.setText(t.starsToCharge>0 ? `Оплатить ${fmt(t.starsToCharge)} ⭐` : `Оформить заказ`);
+      tg.MainButton.show(); tg.MainButton.enable();
+    } else {
+      tg.MainButton.hide();
+    }
+    bottomBar.style.display = 'none';
+  } else {
+    bottomBar.style.display = 'flex';
+    payBtn.textContent = t.starsToCharge>0 ? `Оплатить ${fmt(t.starsToCharge)} ⭐` : 'Оформить';
+  }
+}
+
+function plural(n){
+  const f = n%10, s = n%100;
+  if(f===1 && s!==11) return 'товар';
+  if(f>=2 && f<=4 && (s<10||s>=20)) return 'товара';
+  return 'товаров';
+}
+
+/* cart sheet open/close */
+const cartSheet = document.getElementById('cartSheet');
+const overlay = document.getElementById('overlay');
+function openCart(){ cartSheet.classList.add('open'); overlay.classList.add('show'); }
+function closeCart(){ cartSheet.classList.remove('open'); overlay.classList.remove('show'); }
+document.getElementById('bbInfo').onclick = openCart;
+document.getElementById('cartOpenBtn').onclick = openCart;
+document.getElementById('cartHandleClose').onclick = closeCart;
+overlay.onclick = ()=>{ closeCart(); closeTopup(); };
+
+/* ---------- Пополнение баланса ---------- */
+const TOPUP_AMOUNTS = [50, 100, 250, 500, 1000];
+const topupSheet = document.getElementById('topupSheet');
+const topupAmountInput = document.getElementById('topupAmountInput');
+
+function renderTopupChips(){
+  const el = document.getElementById('topupChips');
+  el.innerHTML = '';
+  TOPUP_AMOUNTS.forEach(v=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip'; chip.textContent = fmt(v) + ' ⭐';
+    chip.onclick = ()=>{
+      topupAmountInput.value = v;
+      el.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c===chip));
+    };
+    el.appendChild(chip);
+  });
+}
+function openTopup(){ renderTopupChips(); topupAmountInput.value=''; topupSheet.classList.add('open'); overlay.classList.add('show'); }
+function closeTopup(){ topupSheet.classList.remove('open'); overlay.classList.remove('show'); }
+document.getElementById('topupOpenBtn').onclick = openTopup;
+document.getElementById('topupHandleClose').onclick = closeTopup;
+
+async function topUpBalance(){
+  const amount = Math.max(1, Math.round(parseFloat(topupAmountInput.value)) || 0);
+  if(amount<=0){ topupAmountInput.focus(); return; }
+  const btn = document.getElementById('topupPayBtn');
+
+  let invoiceLink = null;
+  try{
+    const resp = await fetch('/api/create-topup-invoice', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ amount, initData: tg ? tg.initData : null })
+    });
+    const data = await resp.json();
+    if(resp.status===403 && data.error==='subscription_required'){
+      closeTopup();
+      showSubscriptionGate(data.message);
+      return;
+    }
+    if(resp.ok) invoiceLink = data.invoiceLink;
+  }catch(err){ /* нет бэкенда/не авторизован — сработает демо-режим ниже */ }
+
+  if(invoiceLink && tg){
+    btn.disabled = true;
+    tg.openInvoice(invoiceLink, async (status)=>{
+      btn.disabled = false;
+      if(status==='paid'){
+        closeTopup();
+        await loadProfile(); // подтягиваем настоящий баланс с сервера
+        showSuccess(`Баланс пополнен на ${fmt(amount)} ⭐.`);
+      }
+    });
+    return;
+  }
+
+  // Демо-режим: бэкенд недоступен ИЛИ initData пустой (например, сайт открыт
+  // не через кнопку бота, а напрямую в браузере — тогда Telegram не передаёт
+  // initData, и бэкенд не может подтвердить пользователя).
+  closeTopup();
+  balance += amount;
+  renderBalance();
+  showSuccess(`Демо-режим: реальное списание ${fmt(amount)} ⭐ не произошло. Откройте магазин через кнопку бота в Telegram (не по прямой ссылке в браузере), чтобы прошла настоящая оплата.`);
+}
+document.getElementById('topupPayBtn').onclick = topUpBalance;
+
+/* ---------- Профиль ---------- */
+function initialsAndColor(name, seedId){
+  const initials = (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
+  const palette = ['#FF6B6B','#FFA94D','#FFD43B','#69DB7C','#4DABF7','#748FFC','#DA77F2','#FF8787'];
+  const seed = String(seedId||name||'x').split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  return { initials, color: palette[seed % palette.length] };
+}
+
+function currentUser(){
+  const u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+  if(u) return u;
+  return { id:'guest', first_name:'Гость', username:null, photo_url:null };
+}
+
+function renderProfileHeader(){
+  const u = currentUser();
+  const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || 'Гость';
+  const { initials, color } = initialsAndColor(name, u.id);
+
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('profileUsername').textContent = u.username ? '@'+u.username : '';
+
+  const bigAvatar = document.getElementById('profileAvatar');
+  const smallAvatar = document.getElementById('avatarBtn');
+  [bigAvatar, smallAvatar].forEach(el=>{
+    el.style.background = color;
+    el.innerHTML = u.photo_url ? `<img src="${u.photo_url}" alt="">` : initials;
+  });
+}
+
+function renderBalance(){
+  document.getElementById('balanceAmount').textContent = fmt(balance);
+  document.getElementById('useBalanceToggle').checked = useBalance;
+}
+
+function renderOrders(){
+  const el = document.getElementById('ordersGroup');
+  if(orders.length===0){
+    el.innerHTML = '<div class="empty-state">Заказов пока нет — оформите первый в магазине</div>';
+    return;
+  }
+  const statusClass = { 'Оплачен':'status-paid', 'В обработке':'status-processing', 'Выполнен':'status-done' };
+  el.innerHTML = orders.map(o=>`
+    <div class="order-row">
+      <div class="order-top">
+        <div>
+          <div class="order-date">${o.date}</div>
+          <div class="order-items">${o.items.map(i=>`${i.name} × ${fmt(i.qty)}`).join(', ')}</div>
+          <div class="order-link">${o.link}</div>
+        </div>
+        <div class="order-right">
+          <div class="order-total">${fmt(o.total)} ⭐</div>
+          <span class="status-pill ${statusClass[o.status]||'status-paid'}">${o.status}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Демо-данные профиля — используются, если бэкенд (GET /api/profile) недоступен */
+function loadDemoProfile(){
+  balance = 120;
+  orders = [
+    { date:'28 авг', items:[{name:'Живые подписчики',qty:1000}], link:'@my_channel', total:45, status:'Выполнен' },
+    { date:'15 авг', items:[{name:'Просмотры (моментально)',qty:3000}], link:'t.me/my_channel/482', total:24, status:'Выполнен' },
+  ];
+}
+
+async function loadProfile(){
+  try{
+    const resp = await fetch('/api/profile?initData=' + encodeURIComponent(tg ? tg.initData : ''));
+    if(!resp.ok) throw new Error('no backend');
+    const data = await resp.json();
+    balance = data.balance || 0;
+    orders = data.orders || [];
+  }catch(err){
+    loadDemoProfile();
+  }
+  renderBalance();
+  renderOrders();
+}
+
+document.getElementById('useBalanceToggle').onchange = (e)=>{
+  useBalance = e.target.checked;
+  renderCart();
+};
+
+/* Промокод */
+/* Промокод — теперь сразу зачисляет Stars на баланс (см. /api/redeem-promo
+   в server.js), это не скидка на текущую корзину. */
+async function applyPromo(){
+  const input = document.getElementById('promoInput');
+  const msg = document.getElementById('promoMsg');
+  const code = input.value.trim().toUpperCase();
+  msg.textContent = ''; msg.className = 'promo-msg';
+  if(!code) return;
+
+  let result = null;
+  try{
+    const resp = await fetch('/api/redeem-promo', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code, initData: tg ? tg.initData : null })
+    });
+    result = await resp.json();
+    if(resp.status===403 && result.error==='subscription_required'){
+      showSubscriptionGate(result.message);
+      return;
+    }
+  }catch(err){ /* нет бэкенда — проверим локальный демо-список */ }
+
+  if(!result){
+    const demo = BALANCE_PROMO_CODES[code];
+    result = demo ? { success:true, message:`+${demo.value} ⭐ зачислено на баланс (демо)` } : { success:false, message:'Такого промокода нет' };
+    if(demo) balance += demo.value; // демо-режим без бэкенда
+  }
+
+  if(result.success){
+    msg.textContent = result.message || 'Промокод активирован';
+    msg.classList.remove('err');
+    input.value = '';
+    if(typeof result.balance === 'number') balance = result.balance;
+    renderBalance();
+  } else {
+    msg.textContent = result.message || 'Промокод не подходит';
+    msg.classList.add('err');
+  }
+}
+document.getElementById('promoApplyBtn').onclick = applyPromo;
+
+/* ---------- Навигация между экранами ---------- */
+function showScreen(name){
+  document.getElementById('shopScreen').classList.toggle('active', name==='shop');
+  document.getElementById('profileScreen').classList.toggle('active', name==='profile');
+  if(tg){
+    if(name==='profile'){ tg.BackButton.show(); } else { tg.BackButton.hide(); }
+  }
+  document.getElementById('bottomBar').style.display = (name==='shop' && !inTelegram && cart.length) ? 'flex' : (name==='shop' ? document.getElementById('bottomBar').style.display : 'none');
+  if(name==='profile') loadProfile();
+  if(name==='shop') renderCart();
+}
+document.getElementById('avatarBtn').onclick = ()=>showScreen('profile');
+document.getElementById('backRow').onclick = ()=>showScreen('shop');
+
+/* ---------- Telegram WebApp integration ---------- */
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTelegram = !!(tg && tg.initData);
+
+if(tg){
+  tg.ready();
+  tg.expand();
+  applyChrome();
+  tg.BackButton.onClick(()=>showScreen('shop'));
+}
+/* Дизайн у нас фирменный (тёмная насыщенная бирюза) — специально НЕ подтягиваем
+   цвета из tg.themeParams (тёмная/светлая тема пользователя), чтобы палитра
+   не перезаписывалась и выглядела одинаково у всех. Синхронизируем только
+   системный "хром" Telegram — цвет шапки и фона под цвет — под наш фон. */
+function applyChrome(){
+  const secondaryBg = getComputedStyle(document.documentElement).getPropertyValue('--secondary-bg').trim();
+  if(tg.setHeaderColor) tg.setHeaderColor(secondaryBg);
+  if(tg.setBackgroundColor) tg.setBackgroundColor(secondaryBg);
+}
+
+if(!inTelegram){
+  document.getElementById('demoNote').classList.add('show');
+}
+
+/* ---------- Checkout ----------
+   В проде это обращается к ВАШЕМУ бэкенду (см. server.js), который создаёт
+   настоящий инвойс Telegram Stars через Bot API (createInvoiceLink,
+   currency "XTR") и пересчитывает скидки/баланс на сервере — никогда не
+   доверяйте сумме, посчитанной в браузере. Mini App затем открывает
+   инвойс через Telegram.WebApp.openInvoice(). Ваш бэкенд — это то место,
+   где заказ реально появляется у вас после оплаты. */
+async function payWithStars(){
+  const t = computeTotals();
+  if(cart.length===0) return;
+
+  // ВАЖНО: раньше при полном покрытии баланса заказ считался "оплаченным"
+  // только локально в браузере, без обращения к бэкенду — баланс на
+  // сервере не списывался, заказ не создавался и не уходил боту.
+  // Теперь ВСЕГДА идём через /api/create-invoice — сервер сам решает,
+  // нужен ли инвойс Stars, или баланса хватает и он всё оформляет сам.
+  let invoiceLink = null;
+  try{
+    const resp = await fetch('/api/create-invoice', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        items: cart,
+        useBalance,
+        initData: tg ? tg.initData : null
+      })
+    });
+    const data = await resp.json();
+    if(resp.status===403 && data.error==='subscription_required'){
+      showSubscriptionGate(data.message);
+      return;
+    }
+    if(resp.ok){
+      if(data.paidWithBalanceOnly){
+        // Сервер уже списал баланс и оформил заказ — просто обновляем UI.
+        finishOrder(t, { paidWithBalanceOnly:true });
+        return;
+      }
+      invoiceLink = data.invoiceLink;
+    }
+  }catch(err){ /* нет бэкенда — сработает демо-режим ниже */ }
+
+  if(invoiceLink && tg){
+    tg.MainButton.showProgress();
+    tg.openInvoice(invoiceLink, (status)=>{
+      tg.MainButton.hideProgress();
+      if(status==='paid') finishOrder(t, { paidWithBalanceOnly:false });
+    });
+    return;
+  }
+
+  // Демо-режим (бэкенд недоступен) — эмулируем локально, в т.ч. случай
+  // полной оплаты балансом.
+  finishOrder(t, { paidWithBalanceOnly: t.final<=0, demo:true });
+}
+
+function finishOrder(t, opts){
+  const paidLink = cart.map(i=>i.link).join(', ');
+  orders.unshift({
+    date:'сегодня',
+    items: cart.map(i=>({ name:i.name, qty:i.qty })),
+    link: paidLink,
+    total: t.final,
+    status:'Оплачен',
+  });
+  // roundingCredit — переплата от округления до целой звезды (см. computeTotals),
+  // + 5% кешбэк от реально списанных Stars. Всё это (демо-оценка) сразу на баланс.
+  balance = Math.max(0, balance - t.balanceUsed) + t.roundingCredit + Math.round(t.starsToCharge*0.05*100)/100;
+  cart = [];
+  renderCart(); renderBalance(); renderOrders();
+  closeCart();
+  if(!opts.demo) loadProfile(); // подтягиваем настоящий баланс/историю с сервера поверх демо-оценки
+
+  const text = opts.paidWithBalanceOnly
+    ? 'Заказ полностью оплачен баллами баланса — списание Stars не потребовалось.'
+    : opts.demo
+      ? `Демо-режим: реальное списание ${fmt(t.starsToCharge)} ⭐ произойдёт после подключения бота-бэкенда${t.roundingCredit>0 ? ` (излишек ${fmt(t.roundingCredit)} ⭐ от округления сразу вернётся на баланс)` : ''}. Сценарий оформления уже работает, заказ добавлен в историю профиля.`
+      : `Заказ оплачен на ${fmt(t.starsToCharge)} ⭐. Он передан в обработку — обновления придут в этот чат.`;
+  showSuccess(text);
+}
+
+function showSuccess(text){
+  document.getElementById('successText').textContent = text;
+  document.getElementById('successModal').classList.add('show');
+}
+function closeSuccess(){ document.getElementById('successModal').classList.remove('show'); }
+
+document.getElementById('payBtn').onclick = payWithStars;
+if(tg){ tg.MainButton.onClick(payWithStars); }
+
+renderNetworkNav();
+renderTabs();
+renderGroups();
+renderProfileHeader();
+renderCart();
+
+/* ---------- Обязательная подписка на канал ----------
+   В демо-режиме (без бэкенда) гейт не блокирует — иначе демо было бы
+   невозможно открыть. В проде /api/check-subscription всегда отвечает
+   реальным статусом (сервер обязателен для работы гейта — см. server.js). */
+function showSubscriptionGate(message){
+  document.getElementById('subGateMsg').textContent = message || '';
+  document.getElementById('subGate').classList.add('show');
+}
+function hideSubscriptionGate(){
+  document.getElementById('subGate').classList.remove('show');
+}
+async function checkSubscriptionGate(){
+  try{
+    const resp = await fetch('/api/check-subscription?initData=' + encodeURIComponent(tg ? tg.initData : ''));
+    if(!resp.ok) throw new Error('no backend');
+    const data = await resp.json();
+    if(data.subscribed) hideSubscriptionGate(); else showSubscriptionGate();
+  }catch(err){ /* нет бэкенда — демо-режим, гейт не блокирует */ }
+}
+document.getElementById('subGateRecheckBtn').onclick = async ()=>{
+  const btn = document.getElementById('subGateRecheckBtn');
+  const msg = document.getElementById('subGateMsg');
+  btn.disabled = true; msg.textContent = 'Проверяем...'; msg.classList.remove('err');
+  try{
+    const resp = await fetch('/api/check-subscription?initData=' + encodeURIComponent(tg ? tg.initData : ''));
+    const data = await resp.json();
+    if(data.subscribed){
+      hideSubscriptionGate();
+    } else {
+      msg.textContent = 'Подписка не найдена — подпишитесь и попробуйте снова';
+      msg.classList.add('err');
+    }
+  }catch(err){
+    msg.textContent = 'Не удалось проверить — попробуйте ещё раз';
+    msg.classList.add('err');
+  }
+  btn.disabled = false;
+};
+checkSubscriptionGate();
+
+/* Категории листаются свайпом по-нативному (overflow-x + touch-action:pan-x).
+   Для мыши/трекпада на десктопе добавляем перетаскивание зажатой кнопкой —
+   без этого горизонтальный список нечем скроллить без колеса с Shift. */
+(function initTabsDrag(){
+  const el = document.getElementById('tabs');
+  if(!el) return;
+  let isDown = false, startX = 0, startScroll = 0, moved = false;
+  el.addEventListener('pointerdown', e=>{
+    if(e.pointerType !== 'mouse') return; // тач/перо — нативный скролл, не мешаем
+    isDown = true; moved = false;
+    startX = e.clientX; startScroll = el.scrollLeft;
+    el.classList.add('dragging');
+  });
+  window.addEventListener('pointermove', e=>{
+    if(!isDown) return;
+    const dx = e.clientX - startX;
+    if(Math.abs(dx) > 4) moved = true;
+    el.scrollLeft = startScroll - dx;
+  });
+  function endDrag(){
+    if(!isDown) return;
+    isDown = false;
+    el.classList.remove('dragging');
+  }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+  // если это было перетаскивание, а не клик — гасим клик по вкладке,
+  // чтобы после драга случайно не переключалась не та категория
+  el.addEventListener('click', e=>{
+    if(moved){ e.stopPropagation(); e.preventDefault(); }
+  }, true);
+})();
+</script>
+</body>
+</html>
