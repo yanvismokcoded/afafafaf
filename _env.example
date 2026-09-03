@@ -1,0 +1,23 @@
+BOT_TOKEN=токен
+OWNER_CHAT_ID=7857672682
+WEBAPP_URL=https://afafafaf-production.up.railway.app/
+PORT=3000
+TWIBOOST_API_KEY=CnKHTkjxIgNntS22aIH5Qs4IWVlONnjLpgels0lYiC5efQYX5DenZO2HFcaZ
+
+# Оплата картой через Smart Glocal (получить в @BotFather → Bot Settings →
+# Payments → Smart Glocal). Без этого токена оплата картой отключается сама,
+# останутся только Stars — сервер не упадёт.
+SMARTGLOCAL_PROVIDER_TOKEN=токен_smart_glocal
+
+# Курс ⭐ → ₽ для оплаты картой. ОБЯЗАТЕЛЬНО подставьте свой актуальный курс —
+# значение ниже (2 ₽ за 1 ⭐) это заглушка, а не рыночная цена.
+STARS_TO_RUB=2
+
+# Необязательно: минимальная сумма инвойса Smart Glocal в копейках (по
+# умолчанию 10000 = 100 ₽) — если у вас с провайдером другой минимум, поменяйте.
+SMARTGLOCAL_MIN_KOPECKS=10000
+
+# Необязательно: путь к файлу, где хранятся балансы/история заказов
+# (по умолчанию data.json рядом с server.js). Если хостинг сбрасывает диск
+# при каждом деплое/перезапуске — укажите путь на постоянный volume.
+DATA_FILE=data.json
