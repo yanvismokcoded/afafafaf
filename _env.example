@@ -7,15 +7,15 @@ TWIBOOST_API_KEY=CnKHTkjxIgNntS22aIH5Qs4IWVlONnjLpgels0lYiC5efQYX5DenZO2HFcaZ
 # Оплата картой через Smart Glocal (получить в @BotFather → Bot Settings →
 # Payments → Smart Glocal). Без этого токена оплата картой отключается сама,
 # останутся только Stars — сервер не упадёт.
-SMARTGLOCAL_PROVIDER_TOKEN=токен_smart_glocal
+SMARTGLOCAL_PROVIDER_TOKEN=1877036958:TEST:15e8658a439b0d2f3d06e2ed3b3c13498106d7d6
 
 # Курс ⭐ → ₽ для оплаты картой. ОБЯЗАТЕЛЬНО подставьте свой актуальный курс —
 # значение ниже (2 ₽ за 1 ⭐) это заглушка, а не рыночная цена.
-STARS_TO_RUB=2
+STARS_TO_RUB=1
 
 # Необязательно: минимальная сумма инвойса Smart Glocal в копейках (по
 # умолчанию 10000 = 100 ₽) — если у вас с провайдером другой минимум, поменяйте.
-SMARTGLOCAL_MIN_KOPECKS=10000
+SMARTGLOCAL_MIN_KOPECKS=1000
 
 # Необязательно: путь к файлу, где хранятся балансы/история заказов
 # (по умолчанию data.json рядом с server.js). Если хостинг сбрасывает диск
