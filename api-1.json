@@ -1,0 +1,1138 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Matrix SMS API",
+    "version": "1.0.0",
+    "description": "**Ключ:** бот → Профиль → API → выпустить (48 символов, показывается один раз). В каждый запрос: `Authorization: Bearer ВАШ_ТОКЕН`.\n\n<details><summary>Лимиты запросов</summary>\n\n| Группа | Лимит |\n|---|---|\n| `/balance`, `/prices`, `/orders` | 30 / 5 с |\n| `/buy` | 5 / 10 с |\n| `/orders/{id}/code`, `/tdata`, `/session` | 15 / 10 с |\n\nПревышение — `429`.\n\n</details>"
+  },
+  "servers": [
+    {
+      "url": "https://matrix-project.org/api"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Баланс",
+      "description": "Данные аккаунта и текущий баланс"
+    },
+    {
+      "name": "Каталог",
+      "description": "Цены на аккаунты"
+    },
+    {
+      "name": "Покупка",
+      "description": "Покупка аккаунта"
+    },
+    {
+      "name": "Заказы",
+      "description": "Список ваших заказов и карточка заказа"
+    },
+    {
+      "name": "Аккаунт",
+      "description": "Код входа, tdata, завершение сессии купленного аккаунта"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "token",
+        "description": "Персональный ключ, выданный ботом (Профиль → API), длиной 48 символов."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "example": "no_funds"
+          },
+          "msg": {
+            "type": "string",
+            "example": "На балансе не хватает средств"
+          }
+        }
+      },
+      "Ok": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "Balance": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 84213
+          },
+          "username": {
+            "type": "string",
+            "nullable": true,
+            "example": "nikita"
+          },
+          "balance_rub": {
+            "type": "number",
+            "example": 615
+          },
+          "orders_count": {
+            "type": "integer",
+            "example": 11
+          }
+        }
+      },
+      "PriceItem": {
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "example": "IN"
+          },
+          "country_label": {
+            "type": "string",
+            "example": "Индия"
+          },
+          "year": {
+            "type": "integer",
+            "nullable": true,
+            "description": "год регистрации (только aged)",
+            "example": 2019
+          },
+          "price_rub": {
+            "type": "number",
+            "example": 96
+          }
+        }
+      },
+      "Prices": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "newreg": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceItem"
+            },
+            "description": "свежие аккаунты"
+          },
+          "aged": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriceItem"
+            },
+            "description": "аккаунты с отлёжкой"
+          }
+        }
+      },
+      "BuyRequest": {
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "newreg",
+              "aged"
+            ]
+          },
+          "country": {
+            "type": "string",
+            "description": "код страны (ISO2), необязательно",
+            "example": "IN"
+          },
+          "year": {
+            "type": "integer",
+            "description": "год регистрации (только aged), необязательно",
+            "example": 2019
+          }
+        }
+      },
+      "BuyAccountResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "order_id": {
+            "type": "integer",
+            "example": 7734
+          },
+          "kind": {
+            "type": "string",
+            "example": "newreg"
+          },
+          "country": {
+            "type": "string",
+            "example": "IN"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+917042581396"
+          },
+          "login_code": {
+            "type": "string",
+            "nullable": true,
+            "example": "48213"
+          },
+          "price_rub": {
+            "type": "number",
+            "example": 96
+          },
+          "new_balance_rub": {
+            "type": "number",
+            "example": 519
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "order_id": {
+            "type": "integer",
+            "example": 7734
+          },
+          "kind": {
+            "type": "string",
+            "example": "newreg"
+          },
+          "status": {
+            "type": "string",
+            "example": "delivered"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+917042581396"
+          },
+          "price_rub": {
+            "type": "number",
+            "example": 96
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-06-14T09:12:00Z"
+          },
+          "year": {
+            "type": "integer",
+            "nullable": true,
+            "description": "год регистрации (только aged)"
+          }
+        }
+      },
+      "OrdersList": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "example": 37
+          },
+          "page_size": {
+            "type": "integer",
+            "example": 20
+          },
+          "page": {
+            "type": "integer",
+            "example": 1
+          }
+        }
+      },
+      "OrderWrap": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          }
+        }
+      },
+      "CodeResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "example": "48213"
+          }
+        }
+      },
+      "TdataResult": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          },
+          "tdata_url": {
+            "type": "string",
+            "description": "ссылка на tdata.zip, живёт 15 минут",
+            "example": "https://matrix-project.org/api/v1/files/kQ7f2mN0vE3pT8xR-jL4wZsY6bH1oCdA"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "когда ссылка истечёт",
+            "example": "2026-09-02T22:42:00Z"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/balance": {
+      "get": {
+        "tags": [
+          "Баланс"
+        ],
+        "summary": "Баланс аккаунта",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Balance"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Balance.Get",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl \"https://matrix-project.org/api/v1/balance\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.get(\n    \"https://matrix-project.org/api/v1/balance\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/balance\", {\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/prices": {
+      "get": {
+        "tags": [
+          "Каталог"
+        ],
+        "summary": "Актуальные цены по каталогу",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Prices"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Catalog.Prices",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl \"https://matrix-project.org/api/v1/prices\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.get(\n    \"https://matrix-project.org/api/v1/prices\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/prices\", {\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/buy": {
+      "post": {
+        "tags": [
+          "Покупка"
+        ],
+        "summary": "Оформить покупку",
+        "description": "Сервер сам находит самый дешёвый лот нужной категории и списывает его стоимость с баланса.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuyRequest"
+              },
+              "examples": {
+                "Авторег Индия": {
+                  "value": {
+                    "kind": "newreg",
+                    "country": "IN"
+                  }
+                },
+                "Отлёга с годом": {
+                  "value": {
+                    "kind": "aged",
+                    "country": "IN",
+                    "year": 2019
+                  }
+                },
+                "Отлёга, любая страна": {
+                  "value": {
+                    "kind": "aged"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Куплено",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyAccountResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Некорректные параметры запроса либо не хватает баланса (`no_funds`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "no_funds",
+                  "msg": "На балансе не хватает средств"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Нет в наличии (`no_stock`) или покупка не удалась — средства возвращены (`purchase_failed`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "no_stock",
+                  "msg": "Нет доступных аккаунтов по этому фильтру"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Purchase.Buy",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl -X POST \"https://matrix-project.org/api/v1/buy\" \\\n  -H \"Authorization: Bearer $TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"kind\": \"newreg\", \"country\": \"IN\"}'"
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.post(\n    \"https://matrix-project.org/api/v1/buy\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n    json={\"kind\": \"newreg\", \"country\": \"IN\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/buy\", {\n  method: \"POST\",\n  headers: {\n    \"Authorization\": `Bearer ${TOKEN}`,\n    \"Content-Type\": \"application/json\",\n  },\n  body: JSON.stringify({\"kind\": \"newreg\", \"country\": \"IN\"}),\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/orders": {
+      "get": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Ваша история заказов",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdersList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Orders.List",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl \"https://matrix-project.org/api/v1/orders?page=1\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.get(\n    \"https://matrix-project.org/api/v1/orders\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n    params={\"page\": 1},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/orders?page=1\", {\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/orders/{id}": {
+      "get": {
+        "tags": [
+          "Заказы"
+        ],
+        "summary": "Детали заказа",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderWrap"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Такого заказа нет или он принадлежит другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "not_found",
+                  "msg": "Такого заказа нет или он принадлежит другому пользователю"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Orders.Get",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl \"https://matrix-project.org/api/v1/orders/7734\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.get(\n    \"https://matrix-project.org/api/v1/orders/7734\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/orders/7734\", {\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/orders/{id}/code": {
+      "post": {
+        "tags": [
+          "Аккаунт"
+        ],
+        "summary": "Запросить код авторизации",
+        "description": "Код входа из Telegram.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Код",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Такого заказа нет или он принадлежит другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "not_found",
+                  "msg": "Такого заказа нет или он принадлежит другому пользователю"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Account.GetCode",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl -X POST \"https://matrix-project.org/api/v1/orders/7734/code\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.post(\n    \"https://matrix-project.org/api/v1/orders/7734/code\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/orders/7734/code\", {\n  method: \"POST\",\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/orders/{id}/tdata": {
+      "post": {
+        "tags": [
+          "Аккаунт"
+        ],
+        "summary": "Получить tdata",
+        "description": "Временная ссылка на архив tdata.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TdataResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "tdata недоступна для этого заказа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "bad_params",
+                  "msg": "tdata недоступна для этого заказа"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Такого заказа нет или он принадлежит другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "not_found",
+                  "msg": "Такого заказа нет или он принадлежит другому пользователю"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Account.GetTdata",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl -X POST \"https://matrix-project.org/api/v1/orders/7734/tdata\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.post(\n    \"https://matrix-project.org/api/v1/orders/7734/tdata\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/orders/7734/tdata\", {\n  method: \"POST\",\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    },
+    "/v1/files/{token}": {
+      "get": {
+        "tags": [
+          "Аккаунт"
+        ],
+        "summary": "Скачать tdata",
+        "description": "Ссылка из ответа `/tdata`. Без заголовка Authorization — токен в самом пути и есть авторизация. Живёт 15 минут, дальше 404.",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tdata.zip",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ссылка не найдена или истекла",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "not_found",
+                  "msg": "Ссылка не найдена или истекла"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Account.DownloadTdata",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl -O \"https://matrix-project.org/api/v1/files/kQ7f2mN0vE3pT8xR-jL4wZsY6bH1oCdA\""
+          }
+        ]
+      }
+    },
+    "/v1/orders/{id}/session": {
+      "post": {
+        "tags": [
+          "Аккаунт"
+        ],
+        "summary": "Завершить сессию аккаунта",
+        "description": "Разлогинивает все активные сессии Telegram на аккаунте.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Эта операция не поддерживается для такого типа заказа",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "bad_params",
+                  "msg": "Эта операция не поддерживается для такого типа заказа"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Токен отсутствует или недействителен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "unauthorized",
+                  "msg": "Токен отсутствует или недействителен"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Такого заказа нет или он принадлежит другому пользователю",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "not_found",
+                  "msg": "Такого заказа нет или он принадлежит другому пользователю"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Превышена частота запросов",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "ok": false,
+                  "error": "rate_limited",
+                  "msg": "Превышена частота запросов"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "Account.EndSession",
+        "x-codeSamples": [
+          {
+            "lang": "shell",
+            "label": "cURL",
+            "source": "curl -X POST \"https://matrix-project.org/api/v1/orders/7734/session\" \\\n  -H \"Authorization: Bearer $TOKEN\""
+          },
+          {
+            "lang": "python",
+            "label": "Python",
+            "source": "import requests\n\nTOKEN = \"ВАШ_ТОКЕН\"\n\nresp = requests.post(\n    \"https://matrix-project.org/api/v1/orders/7734/session\",\n    headers={\"Authorization\": f\"Bearer {TOKEN}\"},\n)\nresp.raise_for_status()\nprint(resp.json())"
+          },
+          {
+            "lang": "javascript",
+            "label": "JavaScript",
+            "source": "const TOKEN = \"ВАШ_ТОКЕН\";\n\nconst res = await fetch(\"https://matrix-project.org/api/v1/orders/7734/session\", {\n  method: \"POST\",\n  headers: { Authorization: `Bearer ${TOKEN}` },\n});\nconsole.log(await res.json());"
+          }
+        ]
+      }
+    }
+  }
+}
