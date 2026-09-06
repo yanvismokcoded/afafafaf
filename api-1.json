@@ -3,7 +3,7 @@
   "info": {
     "title": "Matrix SMS API",
     "version": "1.0.0",
-    "description": "**Ключ:** бот → Профиль → API → выпустить (48 символов, показывается один раз). В каждый запрос: `Authorization: Bearer ВАШ_ТОКЕН`.\n\n<details><summary>Лимиты запросов</summary>\n\n| Группа | Лимит |\n|---|---|\n| `/balance`, `/prices`, `/orders` | 30 / 5 с |\n| `/buy` | 5 / 10 с |\n| `/orders/{id}/code`, `/tdata`, `/session` | 15 / 10 с |\n\nПревышение — `429`.\n\n</details>"
+    "description": "**Ключ:** бот → Профиль → API → выпустить (48 символов, показывается один раз). В каждый запрос: `Authorization: Bearer 9af723eec9b7ca421fc4513ebcbee719ec5fc1ab59d9f021`.\n\n<details><summary>Лимиты запросов</summary>\n\n| Группа | Лимит |\n|---|---|\n| `/balance`, `/prices`, `/orders` | 30 / 5 с |\n| `/buy` | 5 / 10 с |\n| `/orders/{id}/code`, `/tdata`, `/session` | 15 / 10 с |\n\nПревышение — `429`.\n\n</details>"
   },
   "servers": [
     {
