@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waveflair Store — админ-панель</title>
+<style>
+  :root{
+    --bg-solid:#123236;
+    --secondary-bg:#051417;
+    --text:#eafcf8;
+    --hint:#8fc4bf;
+    --button:#2AABEE;
+    --border:rgba(94,224,204,.16);
+    --outline:#1f6b6a;
+    --danger:#ff6e5c;
+    --good:#32d9a6;
+    --amber:#ffb648;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--secondary-bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:24px; max-width:1100px; margin:0 auto;
+  }
+  h1{font-size:20px; margin:0 0 4px;}
+  .sub{color:var(--hint); font-size:13px; margin-bottom:20px;}
+  .tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .tab{
+    padding:9px 16px; border-radius:999px; border:1px solid var(--border);
+    background:var(--bg-solid); color:var(--text); cursor:pointer; font-size:14px;
+  }
+  .tab.active{background:var(--button); border-color:var(--button); color:#fff;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px;}
+  .card{
+    background:var(--bg-solid); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px;
+  }
+  .card .num{font-size:24px; font-weight:700;}
+  .card .label{color:var(--hint); font-size:12px; margin-top:4px;}
+  .row{
+    background:var(--bg-solid); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 14px; margin-bottom:8px; display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap;
+  }
+  .row .main{flex:1; min-width:220px;}
+  .row .name{font-weight:600; font-size:14px;}
+  .row .meta{color:var(--hint); font-size:12px; margin-top:3px;}
+  .row .link{font-family:monospace; font-size:13px; word-break:break-all; margin-top:4px;}
+  .pill{
+    font-size:11px; padding:3px 9px; border-radius:999px; border:1px solid var(--border); color:var(--hint);
+    white-space:nowrap;
+  }
+  .pill.paid{color:var(--good); border-color:var(--good);}
+  .pill.wait{color:var(--amber); border-color:var(--amber);}
+  .pill.err{color:var(--danger); border-color:var(--danger);}
+  button{
+    background:var(--button); color:#fff; border:none; border-radius:8px;
+    padding:8px 14px; font-size:13px; cursor:pointer;
+  }
+  button.secondary{background:transparent; border:1px solid var(--border); color:var(--text);}
+  button:disabled{opacity:.5; cursor:default;}
+  select{
+    background:var(--bg-solid); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:7px 10px; font-size:13px;
+  }
+  textarea{
+    width:100%; min-height:180px; background:var(--bg-solid); color:var(--text);
+    border:1px solid var(--border); border-radius:var(--radius); padding:12px;
+    font-family:monospace; font-size:13px; resize:vertical;
+  }
+  .toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; align-items:center;}
+  .empty{color:var(--hint); padding:24px; text-align:center; font-size:14px;}
+  .toast{
+    position:fixed; bottom:20px; right:20px; background:var(--good); color:#04241d;
+    padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600; display:none;
+  }
+</style>
+</head>
+<body>
+
+<h1>Waveflair Store — админ-панель</h1>
+<div class="sub">Заказы, статусы и ручная выдача Premium Реакций</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="overview">Обзор</div>
+  <div class="tab" data-tab="premium">Premium Реакции</div>
+  <div class="tab" data-tab="orders">Все заказы</div>
+  <div class="tab" data-tab="broadcast">Рассылка</div>
+</div>
+
+<div class="panel active" id="panel-overview">
+  <div class="cards" id="statCards"></div>
+</div>
+
+<div class="panel" id="panel-premium">
+  <div class="toolbar">
+    <button onclick="loadPremium()">Обновить</button>
+    <button class="secondary" onclick="copyPremiumText()">Скопировать список</button>
+    <button class="secondary" onclick="notifyPremium()">Отправить в Telegram</button>
+  </div>
+  <textarea id="premiumText" readonly placeholder="Список появится здесь..."></textarea>
+  <div style="height:16px"></div>
+  <div id="premiumList"></div>
+</div>
+
+<div class="panel" id="panel-orders">
+  <div class="toolbar">
+    <select id="statusFilter" onchange="loadOrders()">
+      <option value="">Все статусы</option>
+      <option value="Оплачен">Оплачен</option>
+      <option value="Ожидает ручной выдачи">Ожидает ручной выдачи</option>
+      <option value="В обработке (авто)">В обработке (авто)</option>
+      <option value="Выполнен">Выполнен</option>
+      <option value="Выдано вручную">Выдано вручную</option>
+      <option value="Требует внимания">Требует внимания</option>
+    </select>
+    <button class="secondary" onclick="loadOrders()">Обновить</button>
+  </div>
+  <div id="ordersList"></div>
+</div>
+
+<div class="panel" id="panel-broadcast">
+  <div class="sub" id="broadcastCount">Загрузка количества пользователей...</div>
+  <textarea id="broadcastText" placeholder="Текст сообщения, которое получат все пользователи бота..." style="min-height:140px"></textarea>
+  <div class="toolbar" style="margin-top:12px">
+    <button id="broadcastBtn" onclick="startBroadcast()">Начать рассылку</button>
+  </div>
+  <div id="broadcastProgress" class="row" style="display:none">
+    <div class="main">
+      <div class="name" id="broadcastStatusText">—</div>
+      <div class="meta" id="broadcastMeta"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(()=> t.style.display='none', 2200);
+}
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='overview') loadStats();
+    if(tab.dataset.tab==='premium') loadPremium();
+    if(tab.dataset.tab==='orders') loadOrders();
+    if(tab.dataset.tab==='broadcast') initBroadcastTab();
+  });
+});
+
+async function api(path, opts){
+  const res = await fetch(path, opts);
+  if(!res.ok){
+    const err = await res.json().catch(()=>({error:'Ошибка запроса'}));
+    throw new Error(err.error || 'Ошибка запроса');
+  }
+  return res.json();
+}
+
+async function loadStats(){
+  try{
+    const s = await api('/admin/api/stats');
+    document.getElementById('statCards').innerHTML = `
+      <div class="card"><div class="num">${s.usersCount}</div><div class="label">Пользователей</div></div>
+      <div class="card"><div class="num">${s.ordersCount}</div><div class="label">Заказов всего</div></div>
+      <div class="card"><div class="num">${s.totalRevenue} ⭐</div><div class="label">Оборот (сумма total по заказам)</div></div>
+      <div class="card"><div class="num">${s.pendingManualCount}</div><div class="label">Ожидают ручной выдачи</div></div>
+    `;
+  }catch(e){ showToast(e.message); }
+}
+
+let lastPremiumItems = [];
+async function loadPremium(){
+  try{
+    const data = await api('/admin/api/premium-reactions');
+    lastPremiumItems = data.items;
+    document.getElementById('premiumText').value = data.text;
+    const list = document.getElementById('premiumList');
+    if(data.items.length===0){
+      list.innerHTML = '<div class="empty">Очередь пуста — все Premium Реакции выданы.</div>';
+      return;
+    }
+    list.innerHTML = data.items.map((it,idx)=>`
+      <div class="row">
+        <div class="main">
+          <div class="name">${idx+1}. ${escapeHtml(it.name)} × ${it.qty}</div>
+          <div class="link">${escapeHtml(it.link || '—')}</div>
+          <div class="meta">${it.date} · заказ ${it.orderId.slice(0,8)}</div>
+        </div>
+        <button onclick="markDone('${it.userId}','${it.orderId}')">Выдано</button>
+      </div>
+    `).join('');
+  }catch(e){ showToast(e.message); }
+}
+
+async function markDone(userId, orderId){
+  try{
+    await api(`/admin/api/premium-reactions/mark-done`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ userId, orderId })
+    });
+    showToast('Отмечено выданным');
+    loadPremium();
+  }catch(e){ showToast(e.message); }
+}
+
+function copyPremiumText(){
+  const ta = document.getElementById('premiumText');
+  if(!ta.value){ showToast('Список пуст'); return; }
+  ta.select();
+  document.execCommand('copy');
+  showToast('Список скопирован');
+}
+
+async function notifyPremium(){
+  try{
+    await api('/admin/api/premium-reactions/notify', { method:'POST' });
+    showToast('Отправлено в Telegram');
+  }catch(e){ showToast(e.message); }
+}
+
+async function loadOrders(){
+  try{
+    const status = document.getElementById('statusFilter').value;
+    const qs = status ? '?status='+encodeURIComponent(status) : '';
+    const data = await api('/admin/api/orders'+qs+(status?'&':'?')+'limit=200');
+    const list = document.getElementById('ordersList');
+    if(data.orders.length===0){
+      list.innerHTML = '<div class="empty">Заказов не найдено.</div>';
+      return;
+    }
+    list.innerHTML = data.orders.map(o=>`
+      <div class="row">
+        <div class="main">
+          <div class="name">${escapeHtml(o.buyer)} — ${o.items.map(i=>escapeHtml(i.name)+' × '+i.qty).join(', ')}</div>
+          <div class="link">${escapeHtml(o.link||'')}</div>
+          <div class="meta">${o.date} · ${o.total} ⭐</div>
+        </div>
+        <span class="pill ${statusClass(o.status)}">${escapeHtml(o.status)}</span>
+      </div>
+    `).join('');
+  }catch(e){ showToast(e.message); }
+}
+
+function statusClass(status){
+  if(!status) return '';
+  if(status.includes('Выполнен') || status.includes('Выдано')) return 'paid';
+  if(status.includes('ручной') || status.includes('обработке')) return 'wait';
+  if(status.includes('внимания') || status.includes('Ошибка')) return 'err';
+  return '';
+}
+
+let broadcastPollTimer = null;
+
+async function initBroadcastTab(){
+  try{
+    const s = await api('/admin/api/stats');
+    document.getElementById('broadcastCount').textContent = `Сообщение получат все пользователи бота: ${s.usersCount}`;
+  }catch(e){ /* не критично для этой вкладки */ }
+  refreshBroadcastStatus();
+}
+
+async function startBroadcast(){
+  const text = document.getElementById('broadcastText').value.trim();
+  if(!text){ showToast('Введите текст сообщения'); return; }
+  if(!confirm('Отправить это сообщение всем пользователям бота? Отменить рассылку после старта нельзя.')) return;
+  try{
+    const data = await api('/admin/api/broadcast/start', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text })
+    });
+    showToast(`Рассылка запущена: ${data.total} пользователей`);
+    document.getElementById('broadcastBtn').disabled = true;
+    document.getElementById('broadcastProgress').style.display = 'flex';
+    pollBroadcastStatus();
+  }catch(e){ showToast(e.message); }
+}
+
+function pollBroadcastStatus(){
+  clearInterval(broadcastPollTimer);
+  broadcastPollTimer = setInterval(refreshBroadcastStatus, 1000);
+  refreshBroadcastStatus();
+}
+
+async function refreshBroadcastStatus(){
+  try{
+    const s = await api('/admin/api/broadcast/status');
+    const btn = document.getElementById('broadcastBtn');
+    const box = document.getElementById('broadcastProgress');
+    if(s.total === 0 && !s.startedAt){ return; }
+    box.style.display = 'flex';
+    const done = s.sent + s.failed;
+    document.getElementById('broadcastStatusText').textContent = s.running
+      ? `Рассылка идёт: ${done} / ${s.total}`
+      : `Рассылка завершена: ${done} / ${s.total}`;
+    document.getElementById('broadcastMeta').textContent = `Доставлено: ${s.sent} · Не доставлено (например, заблокировали бота): ${s.failed}`;
+    if(s.running){
+      btn.disabled = true;
+    } else {
+      btn.disabled = false;
+      clearInterval(broadcastPollTimer);
+    }
+  }catch(e){ /* тихо игнорируем, попробуем на следующем тике */ }
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+loadStats();
+</script>
+</body>
+</html>
