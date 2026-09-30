@@ -92,7 +92,13 @@ if (!WEBAPP_URL) {
   console.warn('WEBAPP_URL должен начинаться с https:// — Telegram не откроет Mini App по http-ссылке.');
 }
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const bot = new TelegramBot(BOT_TOKEN, {
+  // long polling: 30 c ожидания на стороне Telegram, короткая пауза между запросами.
+  polling: { interval: 300, params: { timeout: 30 } },
+  // keepAlive + принудительный IPv4: на части хостингов (в т.ч. Railway) запросы
+  // к api.telegram.org по IPv6 виснут/падают с 502 и ETELEGRAM/EFATAL.
+  request: { agentOptions: { keepAlive: true, family: 4 } },
+});
 
 // Страховка: одна неудачная отправка сообщения (например, боту закрыли
 // личку) не должна ронять весь сервер и уводить его в краш-луп с потерей
@@ -103,6 +109,51 @@ process.on('unhandledRejection', (err) => {
 process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err && err.message ? err.message : err);
 });
+
+/** Повторяет вызов Telegram API при временных сбоях (502/сеть). */
+async function withRetry(fn, { tries = 3, delayMs = 700 } = {}) {
+  let lastErr;
+  for (let i = 1; i <= tries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i < tries) await new Promise((r) => setTimeout(r, delayMs * i));
+    }
+  }
+  throw lastErr;
+}
+
+/* Ошибки long polling (502 и т.п.). Пока бот не получает апдейты, он не видит
+   pre_checkout_query, и оплата Stars «висит» — поэтому: 1) не засоряем лог
+   (одна строка раз в 30 с), 2) при серии ошибок подряд перезапускаем polling —
+   это пересоздаёт соединение с Telegram. */
+let pollingErrCount = 0;
+let lastPollingErrAt = 0;
+let lastPollingErrLogAt = 0;
+let pollingRestarting = false;
+bot.on('polling_error', (err) => {
+  pollingErrCount++;
+  lastPollingErrAt = Date.now();
+  if (Date.now() - lastPollingErrLogAt > 30000) {
+    lastPollingErrLogAt = Date.now();
+    console.error(`[polling_error] x${pollingErrCount}: ${err && err.code} ${err && err.message}`);
+  }
+  if (pollingErrCount >= 15 && !pollingRestarting) {
+    pollingRestarting = true;
+    console.warn('Много ошибок polling подряд — перезапускаю polling');
+    Promise.resolve(bot.stopPolling())
+      .catch(() => {})
+      .then(() => new Promise((r) => setTimeout(r, 5000)))
+      .then(() => bot.startPolling())
+      .catch((e) => console.error('Не удалось перезапустить polling:', e && e.message))
+      .finally(() => { pollingRestarting = false; pollingErrCount = 0; });
+  }
+});
+// Если минуту не было ошибок — считаем, что соединение восстановилось.
+setInterval(() => {
+  if (pollingErrCount > 0 && Date.now() - lastPollingErrAt > 60000) pollingErrCount = 0;
+}, 30000);
 const app = express();
 app.use(express.json());
 
@@ -368,6 +419,17 @@ function touchUser(tgUser) {
 
 // orderId -> { userId, items, subtotal, promoCode, balanceUsed, finalTotal }
 const pendingOrders = new Map();
+// Каждому «заказу в процессе оплаты» ставим время создания: сохраняем их в
+// data.json (переживают рестарт), а просроченные (>48 ч) отбрасываем.
+const PENDING_TTL_MS = 48 * 3600 * 1000;
+const _pendingSet = pendingOrders.set.bind(pendingOrders);
+pendingOrders.set = (key, value) => {
+  if (value && !value.createdAt) value.createdAt = Date.now();
+  return _pendingSet(key, value);
+};
+// telegram_payment_charge_id уже обработанных платежей — защита от двойного
+// зачисления, если Telegram доставит successful_payment повторно после рестарта.
+const processedCharges = new Set();
 
 // requestId -> { id, userId, orderId, amount, status: 'pending'|'paid'|'declined', createdAt }
 // Заявки пользователей на вывод баланса — деньги СРАЗУ списываются с баланса
@@ -382,10 +444,8 @@ const MIN_WITHDRAW_AMOUNT = 50; // минимальная сумма заявк�
    (Map/Set) — при каждом рестарте процесса (деплой, падение, "засыпание"
    на бесплатном хостинге) баланс и история заказов у всех пользователей
    обнулялись. Теперь состояние загружается из файла при старте и
-   сохраняется на диск после каждого изменения. pendingOrders намеренно
-   НЕ сохраняются — это короткоживущие "заказы в процессе оплаты", которые
-   и раньше не переживали рестарт ровно на середине оплаты; это не то же
-   самое, из-за чего терялись баланс/история. */
+   сохраняется на диск после каждого изменения. pendingOrders (заказы в процессе оплаты) тоже сохраняются — иначе
+   рестарт между созданием инвойса и оплатой терял заказ. */
 function loadData() {
   try {
     if (!fs.existsSync(DATA_FILE)) return;
@@ -409,7 +469,15 @@ function loadData() {
     if (Array.isArray(raw.withdrawalRequests)) {
       for (const [id, w] of raw.withdrawalRequests) withdrawalRequests.set(id, w);
     }
-    console.log(`Данные загружены из ${DATA_FILE}: пользователей ${users.size}`);
+    if (Array.isArray(raw.pendingOrders)) {
+      for (const [id, o] of raw.pendingOrders) {
+        if (Date.now() - (o.createdAt || 0) < PENDING_TTL_MS) pendingOrders.set(id, o);
+      }
+    }
+    if (Array.isArray(raw.processedCharges)) {
+      for (const c of raw.processedCharges) processedCharges.add(c);
+    }
+    console.log(`Данные загружены из ${DATA_FILE}: пользователей ${users.size}, ожидающих оплаты ${pendingOrders.size}`);
   } catch (err) {
     console.error(`Не удалось загрузить ${DATA_FILE}, стартуем с чистого состояния:`, err.message);
   }
@@ -422,7 +490,13 @@ function saveData() {
       promoState[code] = { uses: promo.uses, redeemedBy: [...promo.redeemedBy] };
     }
     const payload = JSON.stringify(
-      { users: [...users.entries()], promoState, withdrawalRequests: [...withdrawalRequests.entries()] },
+      {
+        users: [...users.entries()],
+        promoState,
+        withdrawalRequests: [...withdrawalRequests.entries()],
+        pendingOrders: [...pendingOrders.entries()].filter(([, o]) => Date.now() - (o.createdAt || 0) < PENDING_TTL_MS),
+        processedCharges: [...processedCharges].slice(-2000),
+      },
       null,
       2
     );
@@ -485,7 +559,7 @@ function itemPrice(item) {
  *  канала NEWS_CHANNEL — иначе getChatMember вернёт ошибку доступа. */
 async function isSubscribed(userId) {
   try {
-    const member = await bot.getChatMember(NEWS_CHANNEL, userId);
+    const member = await withRetry(() => bot.getChatMember(NEWS_CHANNEL, userId), { tries: 2, delayMs: 500 });
     return ['creator', 'administrator', 'member'].includes(member.status);
   } catch (err) {
     console.error('Не удалось проверить подписку на канал:', err && err.message);
@@ -603,14 +677,15 @@ app.post('/api/create-invoice', async (req, res) => {
     pendingOrders.set(orderId, { type: 'order', userId: tgUser.id, items, subtotal, balanceUsed, finalTotal: total, currency: 'XTR', providerLabel: 'Stars', starsCharged, roundingCredit });
 
     const description = items.map(i => `${i.name} × ${i.qty}`).join(', ').slice(0, 250);
-    const invoiceLink = await bot.createInvoiceLink(
+    const invoiceLink = await withRetry(() => bot.createInvoiceLink(
       'Продвижение в Telegram',
       description,
       orderId,
       '',        // provider_token — пусто для Stars
       'XTR',     // currency — обязательно XTR для Stars
       [{ label: 'Заказ', amount: starsCharged }] // для Stars — ровно один элемент, целое число
-    );
+    ));
+    saveData(); // сохраняем ожидающий оплаты заказ на диск (переживёт рестарт)
 
     res.json({ invoiceLink, orderId });
   } catch (err) {
@@ -637,14 +712,15 @@ app.post('/api/create-topup-invoice', async (req, res) => {
     const orderId = 'topup_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     pendingOrders.set(orderId, { type: 'topup', userId: tgUser.id, amount: stars, currency: 'XTR', providerLabel: 'Stars' });
 
-    const invoiceLink = await bot.createInvoiceLink(
+    const invoiceLink = await withRetry(() => bot.createInvoiceLink(
       'Пополнение баланса',
       `Пополнение баланса SMM Store на ${stars} ⭐`,
       orderId,
       '',     // provider_token — пусто для Stars
       'XTR',  // currency — обязательно XTR для Stars
       [{ label: 'Пополнение', amount: stars }]
-    );
+    ));
+    saveData();
 
     res.json({ invoiceLink, orderId });
   } catch (err) {
@@ -766,14 +842,48 @@ function orderToHistoryEntry(userId, items, total, status, refundAmount = 0) {
 
 /** Один запрос к API панели (form-urlencoded, как требует twiboost). */
 async function twiboostRequest(params) {
-  const res = await fetch(TWIBOOST_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ key: TWIBOOST_API_KEY, ...params }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data;
+  // Панель иногда отдаёт HTML (страница ошибки/Cloudflare/техработы) вместо
+  // JSON — раньше это превращалось в загадочное "Unexpected token <".
+  // Теперь читаем ответ как текст, парсим сами и пишем в ошибку HTTP-статус.
+  // Повторяем до 3 раз. Но 'add' создаёт заказ и списывает деньги в панели,
+  // поэтому его НЕ повторяем при таймауте/обрыве (заказ мог уже создаться →
+  // дубль), только когда панель явно отдала ошибку сервера (5xx/429).
+  const isAdd = params.action === 'add';
+  const maxAttempts = 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let retryable = false;
+    try {
+      let res;
+      try {
+        res = await fetch(TWIBOOST_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ key: TWIBOOST_API_KEY, ...params }),
+          signal: AbortSignal.timeout(20000),
+        });
+      } catch (netErr) {
+        retryable = !isAdd;
+        throw new Error(`twiboost недоступен: ${netErr.message}`);
+      }
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        retryable = !isAdd || res.status >= 500 || res.status === 429;
+        const snippet = text.slice(0, 80).replace(/\s+/g, ' ').trim();
+        throw new Error(`twiboost вернул не JSON (HTTP ${res.status}): ${snippet}`);
+      }
+      if (data && data.error) { retryable = false; throw new Error(data.error); }
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (!retryable || attempt === maxAttempts) break;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
+  }
+  throw lastErr;
 }
 
 /** Создать заказ в twiboost. Возвращает numeric order id панели. */
@@ -803,6 +913,25 @@ async function getTwiboostStatuses(orderIds) {
 
 // historyEntryId -> { userId, twiboostOrders: [{id,name,qty,link,price,status}] } — что опрашивается на статус
 const pollingOrders = new Map();
+
+/** После рестарта восстанавливаем опрос статусов: ищем в истории заказы, у
+ *  которых есть позиции twiboost в статусе 'processing'. Раньше pollingOrders
+ *  жил только в памяти — после каждого рестарта такие заказы зависали
+ *  «в обработке» навсегда, а возврат при отмене поставщиком не срабатывал. */
+function restorePollingOrders() {
+  let restored = 0;
+  for (const [userId, user] of users) {
+    for (const entry of user.orders) {
+      const list = entry.twiboostOrders;
+      if (Array.isArray(list) && list.some((o) => o.status === 'processing')) {
+        pollingOrders.set(entry.id, { userId, twiboostOrders: list });
+        restored++;
+      }
+    }
+  }
+  if (restored) console.log(`Восстановлен опрос статусов twiboost для заказов: ${restored}`);
+}
+restorePollingOrders();
 
 /** Пытается автоматически выдать каждую позицию заказа через twiboost.
  *  Позиции, для которых нет мапинга в TWIBOOST_SERVICE_MAP, или те, что
@@ -893,14 +1022,15 @@ async function fulfillOrder(historyEntry, items) {
 
   saveData();
 
+  // Ставим на опрос статуса СРАЗУ после сохранения (до отправки сообщений).
+  if (twiboostOrders.length > 0) {
+    pollingOrders.set(historyEntry.id, { userId: historyEntry.userId, twiboostOrders });
+  }
+
   try {
     await bot.sendMessage(OWNER_CHAT_ID, `🤖 Автовыдача заказа:\n${results.join('\n')}`);
   } catch (err) {
     console.error('Не удалось отправить отчёт по автовыдаче:', err.message);
-  }
-
-  if (twiboostOrders.length > 0) {
-    pollingOrders.set(historyEntry.id, { userId: historyEntry.userId, twiboostOrders });
   }
 }
 
@@ -1158,15 +1288,50 @@ bot.on('callback_query', async (query) => {
 bot.on('pre_checkout_query', async (query) => {
   const order = pendingOrders.get(query.invoice_payload);
   const ok = !!order;
-  await bot.answerPreCheckoutQuery(query.id, ok, ok ? undefined : { error_message: 'Заказ не найден, попробуйте оформить заново' });
+  // Отвечать нужно быстро (лимит Telegram — 10 с) — при сбое сети пробуем ещё.
+  try {
+    await withRetry(
+      () => bot.answerPreCheckoutQuery(query.id, ok, ok ? undefined : { error_message: 'Заказ не найден, попробуйте оформить заново' }),
+      { tries: 3, delayMs: 400 }
+    );
+  } catch (err) {
+    console.error('answerPreCheckoutQuery не удался:', err && err.message);
+  }
 });
 
 // Приходит ТОЛЬКО после реального списания Stars — вот здесь заказ ваш
 bot.on('message', async (msg) => {
   if (!msg.successful_payment) return;
   const payment = msg.successful_payment;
+
+  // Защита от повторной обработки одного и того же платежа.
+  if (processedCharges.has(payment.telegram_payment_charge_id)) {
+    console.warn('Платёж уже обработан, пропускаю:', payment.telegram_payment_charge_id);
+    return;
+  }
+  processedCharges.add(payment.telegram_payment_charge_id);
+
   const order = pendingOrders.get(payment.invoice_payload);
   pendingOrders.delete(payment.invoice_payload);
+
+  // Stars списаны, а заказ не найден (не должно случаться, т.к. pre_checkout
+  // такой платёж отклоняет) — не создаём «пустой» заказ, а сразу сообщаем владельцу.
+  if (!order) {
+    saveData();
+    console.error('Платёж без заказа:', payment.invoice_payload, payment.telegram_payment_charge_id);
+    const b = msg.from || {};
+    await bot.sendMessage(OWNER_CHAT_ID,
+      `🚨 Оплата Stars без найденного заказа!\n` +
+      `Сумма: ${payment.total_amount} ⭐\n` +
+      `Пользователь: ${b.first_name || ''} ${b.username ? '@' + b.username : '(id ' + b.id + ')'}\n` +
+      `payload: ${payment.invoice_payload}\n` +
+      `ID транзакции: ${payment.telegram_payment_charge_id}\n` +
+      `Разберитесь вручную (выдать заказ или сделать возврат).`
+    ).catch((e) => console.error('Не удалось уведомить владельца:', e.message));
+    await bot.sendMessage(msg.chat.id, 'Платёж получен, но заказ не удалось найти автоматически. Мы уже разбираемся и свяжемся с вами.')
+      .catch((e) => console.error('Не удалось написать покупателю:', e.message));
+    return;
+  }
 
   const buyer = msg.from;
   const user = touchUser(buyer);
@@ -1192,7 +1357,8 @@ bot.on('message', async (msg) => {
     } catch (err) {
       console.error('Не удалось отправить уведомление владельцу:', err.message);
     }
-    await bot.sendMessage(msg.chat.id, `Баланс пополнен на ${payment.total_amount} ⭐. Спасибо!`);
+    await bot.sendMessage(msg.chat.id, `Баланс пополнен на ${payment.total_amount} ⭐. Спасибо!`)
+      .catch((e) => console.error('Не удалось написать покупателю:', e.message));
     return;
   }
 
@@ -1211,13 +1377,21 @@ bot.on('message', async (msg) => {
   saveData();
 
   await notifyOwner(buyer, order?.items || [], payment.total_amount, 'Stars, transaction ' + chargeId);
-  await bot.sendMessage(msg.chat.id, 'Спасибо за заказ! Мы уже начали выполнение — обновления пришлём в этот чат.');
+  // Ошибка отправки сообщения (Telegram 502 и т.п.) не должна срывать автовыдачу.
+  await bot.sendMessage(msg.chat.id, 'Спасибо за заказ! Мы уже начали выполнение — обновления пришлём в этот чат.')
+    .catch((e) => console.error('Не удалось написать покупателю:', e.message));
 
   // Автовыдача: создаём заказ(ы) в панели twiboost.com через её API.
   // Если для услуги нет мапинга в TWIBOOST_SERVICE_MAP или запрос к API
   // упал с ошибкой — заказ остаётся у вас в чате на ручную обработку,
   // ничего не теряется.
-  await fulfillOrder(historyEntry, order?.items || []);
+  try {
+    await fulfillOrder(historyEntry, order?.items || []);
+  } catch (err) {
+    console.error('fulfillOrder упал:', err && err.message);
+    saveData();
+    bot.sendMessage(OWNER_CHAT_ID, `🚨 Автовыдача упала с ошибкой (${err && err.message}). Заказ оплачен — выдайте вручную.`).catch(() => {});
+  }
 });
 
 app.listen(PORT, () => console.log(`Server on :${PORT}`));

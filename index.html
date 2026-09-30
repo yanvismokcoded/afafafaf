@@ -2281,6 +2281,7 @@ async function topUpBalance(){
   const btn = document.getElementById('topupPayBtn');
 
   let invoiceLink = null;
+  let serverFailed = false;
   try{
     const resp = await fetch('/api/create-topup-invoice', {
       method:'POST',
@@ -2293,8 +2294,13 @@ async function topUpBalance(){
       showSubscriptionGate(data.message);
       return;
     }
-    if(resp.ok) invoiceLink = data.invoiceLink;
-  }catch(err){ /* нет бэкенда/не авторизован — сработает демо-режим ниже */ }
+    if(resp.ok) invoiceLink = data.invoiceLink; else serverFailed = true;
+  }catch(err){ serverFailed = true; }
+
+  if(!invoiceLink && tg && tg.initData && serverFailed){
+    notifyError('Не удалось создать счёт — сервер временно недоступен. Ничего не списано, попробуйте ещё раз через минуту.');
+    return;
+  }
 
   if(invoiceLink && tg){
     btn.disabled = true;
@@ -2304,6 +2310,8 @@ async function topUpBalance(){
         closeTopup();
         await loadProfile(); // подтягиваем настоящий баланс с сервера
         showSuccess(`Баланс пополнен на ${fmt(amount)} ⭐.`);
+      } else if(status==='failed'){
+        notifyError('Оплата не прошла. Попробуйте ещё раз.');
       }
     });
     return;
@@ -2550,6 +2558,7 @@ async function payWithStars(){
   // Теперь ВСЕГДА идём через /api/create-invoice — сервер сам решает,
   // нужен ли инвойс Stars, или баланса хватает и он всё оформляет сам.
   let invoiceLink = null;
+  let serverFailed = false;
   try{
     const resp = await fetch('/api/create-invoice', {
       method:'POST',
@@ -2571,14 +2580,24 @@ async function payWithStars(){
         return;
       }
       invoiceLink = data.invoiceLink;
+    } else {
+      serverFailed = true;
     }
-  }catch(err){ /* нет бэкенда — сработает демо-режим ниже */ }
+  }catch(err){ serverFailed = true; }
+
+  // Настоящий пользователь Telegram (есть initData): при сбое сервера НЕ уходим
+  // в демо-режим — иначе он видит «успешный» заказ, которого на самом деле нет.
+  if(!invoiceLink && tg && tg.initData && serverFailed){
+    notifyError('Не удалось оформить заказ — сервер временно недоступен. Ничего не списано, попробуйте ещё раз через минуту.');
+    return;
+  }
 
   if(invoiceLink && tg){
     tg.MainButton.showProgress();
     tg.openInvoice(invoiceLink, (status)=>{
       tg.MainButton.hideProgress();
       if(status==='paid') finishOrder(t, { paidWithBalanceOnly:false });
+      else if(status==='failed') notifyError('Оплата не прошла. Попробуйте ещё раз.');
     });
     return;
   }
@@ -2586,6 +2605,10 @@ async function payWithStars(){
   // Демо-режим (бэкенд недоступен) — эмулируем локально, в т.ч. случай
   // полной оплаты балансом.
   finishOrder(t, { paidWithBalanceOnly: t.final<=0, demo:true });
+}
+
+function notifyError(msg){
+  if(tg && tg.showAlert) tg.showAlert(msg); else alert(msg);
 }
 
 function finishOrder(t, opts){
